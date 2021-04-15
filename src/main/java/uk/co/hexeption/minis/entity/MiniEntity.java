@@ -1,26 +1,18 @@
 package uk.co.hexeption.minis.entity;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import javax.annotation.Nullable;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 import com.mojang.authlib.properties.Property;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
+import uk.co.hexeption.minis.util.SkinUtil;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.DefaultPlayerSkin;
@@ -87,11 +79,10 @@ public class MiniEntity extends CreatureEntity implements IEntityAdditionalSpawn
 			setOwnerId(UUID.fromString("33e602eb-2f7e-4a84-8606-aaa1ac4faa68"));
 		}
 		if (textureB64 == null) {
-			textureB64 = getHeadValue(getOwnerId());
+			textureB64 = SkinUtil.getHeadValue(getOwnerId());
 		}
 		if (textureB64.equals("nil")) {
-			UUID uuid = PlayerEntity.getUUID(new GameProfile(getOwnerId(), null));
-			return DefaultPlayerSkin.getDefaultSkin(uuid);
+			return DefaultPlayerSkin.getDefaultSkin(getOwnerId());
 		}
 		GameProfile gameProfile = new GameProfile(getOwnerId(), null);
 		gameProfile.getProperties().put("textures", new Property("textures", textureB64));
@@ -110,42 +101,6 @@ public class MiniEntity extends CreatureEntity implements IEntityAdditionalSpawn
 			return DefaultPlayerSkin.getDefaultSkin(uuid);
 		}
 	}
-
-	Gson g = new Gson();
-
-	private String getHeadValue(UUID uuid) {
-		try {
-			String jsonText = getURLContent("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid.toString());
-			JsonObject obj = g.fromJson(jsonText, JsonObject.class);
-			String value = obj.getAsJsonArray("properties").get(0).getAsJsonObject().get("value").getAsString();
-			return value;
-
-		} catch (Exception e) {
-			return "nil";
-		}
-	}
-
-	private String getURLContent(String urlStr) throws IOException {
-		InputStream is = new URL(urlStr).openStream();
-		try {
-			BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-			String text = readAll(rd);
-
-			return text;
-		} finally {
-			is.close();
-		}
-	}
-
-	private String readAll(Reader rd) throws IOException {
-		StringBuilder sb = new StringBuilder();
-		int cp;
-		while ((cp = rd.read()) != -1) {
-			sb.append((char) cp);
-		}
-		return sb.toString();
-	}
-
 
 	@Override
 	public void writeAdditional(CompoundNBT compound) {
@@ -182,6 +137,11 @@ public class MiniEntity extends CreatureEntity implements IEntityAdditionalSpawn
 
 	public void setOwnerId(@Nullable UUID uuid) {
 		this.dataManager.set(OWNER_UNIQUE_ID, Optional.ofNullable(uuid));
+	}
+
+	@Override
+	public boolean canDespawn(double distanceToClosestPlayer) {
+		return false;
 	}
 
 	@Override
