@@ -20,8 +20,8 @@ apply plugin: 'maven-publish'
 
 version = "1.16.5-1.0"
 def env = System.getenv()
-if (env.BUILD_NUMBER) {
-    version = version + "+" + "${env.BUILD_NUMBER}"
+if (env.GITHUB_RUN_NUMBER) {
+    version = version + "+" + "${env.GITHUB_RUN_NUMBER}"
 }
 
 group = 'uk.co.hexeption'
@@ -141,7 +141,7 @@ publishing {
                 url = "https://repo.hexeption.dev/repository/hex-mods/"
                 credentials {
                     username = "admin"
-                    password = project.getProperty("mavenPass")
+                    password = System.getenv("MAVEN_PASS")
                 }
             }
         }
@@ -150,8 +150,8 @@ publishing {
 
 
 curseforge {
-    if (project.hasProperty('curse_api_key')) {
-        apiKey = project.getProperty('curse_api_key')
+    if (System.getenv("CURSE_API_KEY")) {
+        apiKey = System.getenv("CURSE_API_KEY")
     }
     project {
         id = '472352'
@@ -162,16 +162,14 @@ curseforge {
         mainArtifact(jar) {
             displayName = "Minis v$version"
         }
-        relations {
-        }
     }
 }
 
 import com.modrinth.minotaur.TaskModrinthUpload
 
-task publishModrinth (type: TaskModrinthUpload){
-    if (project.hasProperty('modrinth_api_key')) {
-        token = project.getProperty('modrinth_api_key')
+task publishModrinth (type: TaskModrinthUpload) {
+    if (System.getenv("MODRINTH_API_KEY")) {
+        token = System.getenv("MODRINTH_API_KEY")
     }
     projectId = 'AagJT5ms'
     versionName = "Minis v$version"
