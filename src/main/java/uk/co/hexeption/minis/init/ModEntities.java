@@ -26,7 +26,7 @@ public class ModEntities {
 
 	public static final RegistryObject<EntityType<MiniEntity>> MINI_ENTITY = ENTITY_TYPES.register("mini",
 			() -> EntityType.Builder.create(MiniEntity::new, EntityClassification.AMBIENT)
-					.size(0.6f, 0.5f)
+					.size(0.6f, 2f)
 					.build(new ResourceLocation(Minis.MODID, "mini").toString())
 	);
 
