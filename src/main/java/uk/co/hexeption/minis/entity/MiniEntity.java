@@ -76,7 +76,7 @@ public class MiniEntity extends CreatureEntity implements IEntityAdditionalSpawn
 	@OnlyIn(Dist.CLIENT)
 	public ResourceLocation getSkinLocation() {
 		if (getOwnerId() == null) {
-			setOwnerId(UUID.fromString("33e602eb-2f7e-4a84-8606-aaa1ac4faa68"));
+			setOwnerId(Minecraft.getInstance().player.getUniqueID());
 		}
 		if (textureB64 == null) {
 			textureB64 = SkinUtil.getHeadValue(getOwnerId());
