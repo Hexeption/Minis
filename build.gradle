@@ -7,14 +7,12 @@ buildscript {
     }
     dependencies {
         classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
-        classpath group: 'org.spongepowered', name: 'mixingradle', version: '0.7-SNAPSHOT'
         classpath "gradle.plugin.com.matthewprenger:CurseGradle:1.4.0"
         classpath group: 'gradle.plugin.com.modrinth.minotaur', name: 'Minotaur', version: '1.1.0'
     }
 }
 
 apply plugin: 'net.minecraftforge.gradle'
-apply plugin: 'org.spongepowered.mixin'
 apply plugin: "com.matthewprenger.cursegradle"
 apply plugin: 'maven-publish'
 
@@ -36,7 +34,6 @@ minecraft {
             workingDirectory project.file('run/client')
 
             property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
-            arg "-mixin.config=minis.mixins.json"
 
             property 'forge.logging.console.level', 'debug'
 
@@ -51,7 +48,6 @@ minecraft {
             workingDirectory project.file('run/server')
 
             property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
-            arg "-mixin.config=minis.mixins.json"
 
             property 'forge.logging.console.level', 'debug'
 
@@ -99,16 +95,11 @@ jar {
                 "Implementation-Version"  : project.version,
                 //"Implementation-Vendor": "minis authors",
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
-                "MixinConfigs"            : "minis.mixins.json"
         ])
     }
 }
 
 jar.finalizedBy('reobfJar')
-
-mixin {
-    add sourceSets.main, "minis.refmap.json"
-}
 
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
