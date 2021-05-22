@@ -18,7 +18,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.client.resources.SkinManager;
 import net.minecraft.entity.CreatureEntity;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntitySize;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.Pose;
 import net.minecraft.entity.ai.attributes.AttributeModifierMap;
 import net.minecraft.entity.ai.attributes.Attributes;
 import net.minecraft.entity.ai.goal.LookAtGoal;
@@ -72,7 +75,6 @@ public class MiniEntity extends CreatureEntity implements IEntityAdditionalSpawn
 		super.registerData();
 		this.dataManager.register(OWNER_UNIQUE_ID, Optional.empty());
 	}
-
 	@OnlyIn(Dist.CLIENT)
 	public ResourceLocation getSkinLocation() {
 		if (getOwnerId() == null) {
