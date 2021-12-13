@@ -6,7 +6,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1+', changing: true
         classpath group: 'org.spongepowered', name: 'mixingradle', version: '0.7-SNAPSHOT'
         classpath "gradle.plugin.com.matthewprenger:CurseGradle:1.4.0"
         classpath group: 'gradle.plugin.com.modrinth.minotaur', name: 'Minotaur', version: '1.1.0'
@@ -18,7 +18,7 @@ apply plugin: 'org.spongepowered.mixin'
 apply plugin: "com.matthewprenger.cursegradle"
 apply plugin: 'maven-publish'
 
-version = "1.16.5-1.6"
+version = "1.17.1-1.7"
 def env = System.getenv()
 if (env.GITHUB_RUN_NUMBER) {
     version = version + "+" + "${env.GITHUB_RUN_NUMBER}"
@@ -27,10 +27,14 @@ if (env.GITHUB_RUN_NUMBER) {
 group = 'uk.co.hexeption'
 archivesBaseName = 'minis'
 
-sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
+java.toolchain.languageVersion = JavaLanguageVersion.of(16)
+
+println(' Java: ' + System.getProperty('java.version') +
+        ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ')' +
+        ' Arch: ' + System.getProperty('os.arch'))
 
 minecraft {
-    mappings channel: 'snapshot', version: '20210309-1.16.5'
+    mappings channel: 'official', version: '1.17.1'
     runs {
         client {
             workingDirectory project.file('run/client')
@@ -86,7 +90,7 @@ minecraft {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 dependencies {
-    minecraft 'net.minecraftforge:forge:1.16.5-36.1.4'
+    minecraft 'net.minecraftforge:forge:1.17.1-37.1.1'
 }
 
 jar {
@@ -157,7 +161,8 @@ curseforge {
         id = '472352'
         changelog = 'A changelog can be found at https://github.com/Hexeption/Minis'
         releaseType = 'release'
-        addGameVersion '1.16'
+        addGameVersion '1.17'
+        addGameVersion '1.17.1'
 
         mainArtifact(jar) {
             displayName = "Minis v$version"
@@ -176,6 +181,6 @@ task publishModrinth (type: TaskModrinthUpload) {
     changelog = 'A changelog can be found at https://github.com/Hexeption/Minis'
     versionNumber = "$version"
     uploadFile = jar
-    addGameVersion("1.16.5")
+    addGameVersion("1.17.1")
     addLoader('forge')
 }
