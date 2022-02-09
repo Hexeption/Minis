@@ -21,8 +21,8 @@ import net.minecraft.network.chat.Component;
 @Mixin(EntityRenderer.class)
 public class MixinEntityRenderer<T extends Entity> {
 
-	@Inject(method = "renderName", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/matrix/MatrixStack;scale(FFF)V"))
-	private void renderName(T entityIn, Component displayNameIn, PoseStack matrixStackIn, MultiBufferSource bufferIn, int packedLightIn, CallbackInfo ci) {
+	@Inject(method = "renderNameTag", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/PoseStack;scale(FFF)V"))
+	private void renderNameTag(T entityIn, Component displayNameIn, PoseStack matrixStackIn, MultiBufferSource bufferIn, int packedLightIn, CallbackInfo ci) {
 		if(entityIn instanceof MiniEntity){
 			matrixStackIn.translate(0.0D, 0.5, 0.0D);
 			matrixStackIn.scale(2.2F, 2.2F, 2.2F);

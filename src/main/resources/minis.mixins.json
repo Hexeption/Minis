@@ -1,7 +1,7 @@
 {
   "required": true,
   "package": "uk.co.hexeption.minis.mixin",
-  "compatibilityLevel": "JAVA_8",
+  "compatibilityLevel": "JAVA_17",
   "refmap": "minis.refmap.json",
   "mixins": [
     "MixinEntityRenderer"
