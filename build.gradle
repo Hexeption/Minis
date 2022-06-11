@@ -18,7 +18,7 @@ apply plugin: 'org.spongepowered.mixin'
 apply plugin: "com.matthewprenger.cursegradle"
 apply plugin: 'maven-publish'
 
-version = "1.18.1-1.0"
+version = "1.19-1.0"
 def env = System.getenv()
 if (env.GITHUB_RUN_NUMBER) {
     version = version + "+" + "${env.GITHUB_RUN_NUMBER}"
@@ -34,7 +34,7 @@ println(' Java: ' + System.getProperty('java.version') +
         ' Arch: ' + System.getProperty('os.arch'))
 
 minecraft {
-    mappings channel: 'official', version: '1.18.1'
+    mappings channel: 'official', version: '1.19'
     runs {
         client {
             workingDirectory project.file('run/client')
@@ -90,7 +90,7 @@ minecraft {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 dependencies {
-    minecraft 'net.minecraftforge:forge:1.18.1-39.0.75'
+    minecraft 'net.minecraftforge:forge:1.19-41.0.17'
 }
 
 jar {
@@ -142,7 +142,7 @@ publishing {
     repositories {
         if (project.hasProperty("mavenPass")) {
             maven {
-                url = "https://repo.hexeption.dev/repository/hex-mods/"
+                url = "https://nexus.hexeption.dev/repository/hex-mods/"
                 credentials {
                     username = "admin"
                     password = System.getenv("MAVEN_PASS")
@@ -161,8 +161,7 @@ curseforge {
         id = '472352'
         changelog = 'A changelog can be found at https://github.com/Hexeption/Minis'
         releaseType = 'release'
-        addGameVersion '1.18'
-        addGameVersion '1.18.1'
+        addGameVersion '1.19'
 
         mainArtifact(jar) {
             displayName = "Minis v$version"
@@ -181,6 +180,6 @@ task publishModrinth (type: TaskModrinthUpload) {
     changelog = 'A changelog can be found at https://github.com/Hexeption/Minis'
     versionNumber = "$version"
     uploadFile = jar
-    addGameVersion("1.18.1")
+    addGameVersion("1.19")
     addLoader('forge')
 }

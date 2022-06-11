@@ -6,6 +6,7 @@ import com.mojang.authlib.properties.Property;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.client.resources.SkinManager;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -90,11 +91,11 @@ public class MiniEntity extends PathfinderMob implements IEntityAdditionalSpawnD
 				final MinecraftProfileTexture skin = map.get(MinecraftProfileTexture.Type.SKIN);
 				return manager.registerTexture(skin, MinecraftProfileTexture.Type.SKIN);
 			} else {
-				UUID uuid = Player.createPlayerUUID(gameProfile);
+				UUID uuid = UUIDUtil.getOrCreatePlayerUUID(gameProfile);
 				return DefaultPlayerSkin.getDefaultSkin(uuid);
 			}
 		} else {
-			UUID uuid = Player.createPlayerUUID(gameProfile);
+			UUID uuid = UUIDUtil.getOrCreatePlayerUUID(gameProfile);
 			return DefaultPlayerSkin.getDefaultSkin(uuid);
 		}
 	}
