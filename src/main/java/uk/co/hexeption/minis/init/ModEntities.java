@@ -21,7 +21,7 @@ import uk.co.hexeption.minis.entity.MiniEntity;
 @Mod.EventBusSubscriber(modid = Minis.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModEntities {
 
-	public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(ForgeRegistries.ENTITIES, Minis.MODID);
+	public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, Minis.MODID);
 
 	public static final RegistryObject<EntityType<MiniEntity>> MINI_ENTITY = ENTITY_TYPES.register("mini",
 			() -> EntityType.Builder.of(MiniEntity::new, MobCategory.AMBIENT)
