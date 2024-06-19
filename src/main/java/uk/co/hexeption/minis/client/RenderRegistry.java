@@ -1,11 +1,11 @@
 package uk.co.hexeption.minis.client;
 
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.EntityRenderersEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import uk.co.hexeption.minis.Minis;
 import uk.co.hexeption.minis.client.render.entity.MiniRenderer;
 import uk.co.hexeption.minis.init.ModEntities;

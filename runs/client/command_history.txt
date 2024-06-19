@@ -1,0 +1,11 @@
+/summon minis:mini
+/data get entity 394777a1-1fdb-4b91-b613-c11ebbf8d4b5
+/summon minis:mini -0.99 53.00 -9.47 {"Owner": "Hexy"}
+/data get entity c440a8ee-1779-491f-9af6-1ab1fb47dcf8
+/summon minis:mini 21.32 53.00 -33.77 {"Owner": "Hexeption"}
+/gamerule doDaylightCycle false
+/time set day
+/kill @e
+/summon minis:mini
+/summon minis:mini ~ ~ ~ {"Owner": "Hexeption"}
+/summon minis:mini ~ ~ ~ {"Owner": "PlayerName"}

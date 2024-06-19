@@ -1,0 +1,140 @@
+---- Minecraft Crash Report ----
+// There are four lights!
+
+Time: 2024-06-19 05:33:41
+Description: Mod loading error has occurred
+
+java.lang.Exception: Mod Loading has failed
+	at net.neoforged.neoforge.logging.CrashReportExtender.dumpModLoadingCrashReport(CrashReportExtender.java:55) ~[neoforge-20.4.214.jar:?] {re:classloading}
+	at net.neoforged.neoforge.client.loading.ClientModLoader.completeModLoading(ClientModLoader.java:125) ~[neoforge-20.4.214.jar:?] {re:classloading,pl:runtimedistcleaner:A}
+	at net.minecraft.client.Minecraft.buildInitialScreens(Minecraft.java:685) ~[neoforge-20.4.214.jar:?] {re:classloading,pl:accesstransformer:B,pl:runtimedistcleaner:A}
+	at net.minecraft.client.Minecraft.onGameLoadFinished(Minecraft.java:658) ~[neoforge-20.4.214.jar:?] {re:classloading,pl:accesstransformer:B,pl:runtimedistcleaner:A}
+	at net.minecraft.client.Minecraft.onResourceLoadFinished(Minecraft.java:653) ~[neoforge-20.4.214.jar:?] {re:classloading,pl:accesstransformer:B,pl:runtimedistcleaner:A}
+	at net.minecraft.client.Minecraft.lambda$new$6(Minecraft.java:641) ~[neoforge-20.4.214.jar:?] {re:classloading,pl:accesstransformer:B,pl:runtimedistcleaner:A}
+	at net.minecraft.Util.ifElse(Util.java:428) ~[neoforge-20.4.214.jar:?] {re:classloading}
+	at net.minecraft.client.Minecraft.lambda$new$7(Minecraft.java:635) ~[neoforge-20.4.214.jar:?] {re:classloading,pl:accesstransformer:B,pl:runtimedistcleaner:A}
+	at net.neoforged.neoforge.client.loading.NeoForgeLoadingOverlay.render(NeoForgeLoadingOverlay.java:146) ~[neoforge-20.4.214.jar:?] {re:classloading}
+	at net.minecraft.client.renderer.GameRenderer.render(GameRenderer.java:1134) ~[neoforge-20.4.214.jar:?] {re:classloading,pl:accesstransformer:B,pl:runtimedistcleaner:A}
+	at net.minecraft.client.Minecraft.runTick(Minecraft.java:1269) ~[neoforge-20.4.214.jar:?] {re:classloading,pl:accesstransformer:B,pl:runtimedistcleaner:A}
+	at net.minecraft.client.Minecraft.run(Minecraft.java:824) ~[neoforge-20.4.214.jar:?] {re:classloading,pl:accesstransformer:B,pl:runtimedistcleaner:A}
+	at net.minecraft.client.main.Main.main(Main.java:244) ~[neoforge-20.4.214.jar:?] {re:classloading,pl:runtimedistcleaner:A}
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[?:?] {}
+	at java.lang.reflect.Method.invoke(Method.java:580) ~[?:?] {}
+	at net.neoforged.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:136) ~[loader-2.0.17.jar:2.0] {}
+	at net.neoforged.fml.loading.targets.CommonLaunchHandler.clientService(CommonLaunchHandler.java:124) ~[loader-2.0.17.jar:2.0] {}
+	at net.neoforged.fml.loading.targets.ForgeClientUserdevLaunchHandler.runService(ForgeClientUserdevLaunchHandler.java:19) ~[loader-2.0.17.jar:2.0] {}
+	at net.neoforged.fml.loading.targets.CommonLaunchHandler.lambda$launchService$4(CommonLaunchHandler.java:118) ~[loader-2.0.17.jar:2.0] {}
+	at cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:30) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:53) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:71) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.Launcher.run(Launcher.java:108) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.Launcher.main(Launcher.java:78) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:26) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:23) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.bootstraplauncher.BootstrapLauncher.main(BootstrapLauncher.java:141) ~[bootstraplauncher-1.1.2.jar:?] {}
+
+
+A detailed walkthrough of the error, its code path and all known details is as follows:
+---------------------------------------------------------------------------------------
+
+-- Head --
+Thread: Render thread
+Stacktrace:
+	at net.minecraft.core.MappedRegistry.validateWrite(MappedRegistry.java:122) ~[neoforge-20.4.214.jar%23186!/:?] {re:classloading,pl:accesstransformer:B}
+-- MOD minis --
+Details:
+	Caused by 0: java.lang.ExceptionInInitializerError
+		at uk.co.hexeption.minis.Minis.<init>(Minis.java:18) ~[%23187!/:?] {re:classloading}
+		at jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62) ~[?:?] {}
+		at java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502) ~[?:?] {}
+		at java.lang.reflect.Constructor.newInstance(Constructor.java:486) ~[?:?] {}
+		at net.neoforged.fml.javafmlmod.FMLModContainer.constructMod(FMLModContainer.java:111) ~[loader-2.0.17.jar%23142!/:2.0] {}
+		at net.neoforged.fml.ModContainer.lambda$buildTransitionHandler$10(ModContainer.java:129) ~[loader-2.0.17.jar%23142!/:2.0] {}
+		at java.util.concurrent.CompletableFuture$AsyncRun.run(CompletableFuture.java:1804) ~[?:?] {}
+		at java.util.concurrent.CompletableFuture$AsyncRun.exec(CompletableFuture.java:1796) ~[?:?] {}
+		at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:387) ~[?:?] {}
+		at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(ForkJoinPool.java:1312) ~[?:?] {}
+		at java.util.concurrent.ForkJoinPool.scan(ForkJoinPool.java:1843) ~[?:?] {}
+		at java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:1808) ~[?:?] {}
+		at java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:188) ~[?:?] {}
+
+	Mod File: /Users/kdavis/Code/Java/Mods/Minis/build/resources/main/
+	Failure message: Minis (minis) has failed to load correctly
+		java.lang.ExceptionInInitializerError: null
+	Mod Version: 1.0.0
+	Mod Issue URL: NOT PROVIDED
+	Exception message: java.lang.IllegalStateException: Registry is already frozen
+Stacktrace:
+	at net.minecraft.core.MappedRegistry.validateWrite(MappedRegistry.java:122) ~[neoforge-20.4.214.jar%23186!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.core.MappedRegistry.createIntrusiveHolder(MappedRegistry.java:386) ~[neoforge-20.4.214.jar%23186!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.world.entity.EntityType.<init>(EntityType.java:168) ~[neoforge-20.4.214.jar%23186!/:?] {re:classloading,xf:fml:neoforge:neoforge_method_redirector}
+	at net.minecraft.world.entity.EntityType$Builder.build(EntityType.java:1151) ~[neoforge-20.4.214.jar%23186!/:?] {re:classloading}
+	at uk.co.hexeption.minis.init.ModEntities.<clinit>(ModEntities.java:27) ~[%23187!/:?] {re:classloading}
+	at uk.co.hexeption.minis.Minis.<init>(Minis.java:18) ~[%23187!/:?] {re:classloading}
+	at jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62) ~[?:?] {}
+	at java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502) ~[?:?] {}
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:486) ~[?:?] {}
+	at net.neoforged.fml.javafmlmod.FMLModContainer.constructMod(FMLModContainer.java:111) ~[loader-2.0.17.jar%23142!/:2.0] {}
+	at net.neoforged.fml.ModContainer.lambda$buildTransitionHandler$10(ModContainer.java:129) ~[loader-2.0.17.jar%23142!/:2.0] {}
+	at java.util.concurrent.CompletableFuture$AsyncRun.run(CompletableFuture.java:1804) ~[?:?] {}
+	at java.util.concurrent.CompletableFuture$AsyncRun.exec(CompletableFuture.java:1796) ~[?:?] {}
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:387) ~[?:?] {}
+	at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(ForkJoinPool.java:1312) ~[?:?] {}
+	at java.util.concurrent.ForkJoinPool.scan(ForkJoinPool.java:1843) ~[?:?] {}
+	at java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:1808) ~[?:?] {}
+	at java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:188) ~[?:?] {}
+
+
+-- System Details --
+Details:
+	Minecraft Version: 1.20.4
+	Minecraft Version ID: 1.20.4
+	Operating System: Mac OS X (aarch64) version 15.0
+	Java Version: 21.0.3, Eclipse Adoptium
+	Java VM Version: OpenJDK 64-Bit Server VM (mixed mode), Eclipse Adoptium
+	Memory: 111590816 bytes (106 MiB) / 734003200 bytes (700 MiB) up to 8589934592 bytes (8192 MiB)
+	CPUs: 12
+	Processor Vendor: Apple Inc.
+	Processor Name: Apple M2 Max
+	Identifier: Apple Inc. Family 0xda33d83d Model 0 Stepping 0
+	Microarchitecture: ARM64 SoC: Avalanche + Blizzard
+	Frequency (GHz): 3.50
+	Number of physical packages: 1
+	Number of physical CPUs: 12
+	Number of logical CPUs: 12
+	Graphics card #0 name: Apple M2 Max
+	Graphics card #0 vendor: Apple (0x106b)
+	Graphics card #0 VRAM (MB): 0.00
+	Graphics card #0 deviceId: unknown
+	Graphics card #0 versionInfo: unknown
+	Memory slot #0 capacity (MB): 0.00
+	Memory slot #0 clockSpeed (GHz): 0.00
+	Memory slot #0 type: unknown
+	Virtual memory max (MB): 33792.00
+	Virtual memory used (MB): 23780.20
+	Swap memory total (MB): 1024.00
+	Swap memory used (MB): 607.56
+	JVM Flags: 0 total; 
+	ModLauncher: 10.0.9+10.0.9+main.dcd20f30
+	ModLauncher launch target: forgeclientuserdev
+	ModLauncher naming: mcp
+	ModLauncher services: 
+		sponge-mixin-0.13.0+mixin.0.8.5.jar mixin PLUGINSERVICE 
+		loader-2.0.17.jar slf4jfixer PLUGINSERVICE 
+		loader-2.0.17.jar runtime_enum_extender PLUGINSERVICE 
+		at-modlauncher-10.0.1.jar accesstransformer PLUGINSERVICE 
+		loader-2.0.17.jar runtimedistcleaner PLUGINSERVICE 
+		modlauncher-10.0.9.jar mixin TRANSFORMATIONSERVICE 
+		modlauncher-10.0.9.jar mixin-synthetic-package TRANSFORMATIONSERVICE 
+		modlauncher-10.0.9.jar fml TRANSFORMATIONSERVICE 
+	FML Language Providers: 
+		javafml@2.0
+		lowcodefml@2.0
+		minecraft@2.0
+	Mod List: 
+		neoforge-20.4.214.jar                             |Minecraft                     |minecraft                     |1.20.4              |COMMON_SET|Manifest: a1:d4:5e:04:4f:d3:d6:e0:7b:37:97:cf:77:b0:de:ad:4a:47:ce:8c:96:49:5f:0a:cf:8c:ae:b2:6d:4b:8a:3f
+		                                                  |NeoForge                      |neoforge                      |20.4.214            |COMMON_SET|Manifest: NOSIGNATURE
+		main                                              |Minis                         |minis                         |1.0.0               |ERROR     |Manifest: NOSIGNATURE
+	Crash Report UUID: f281936f-a632-48e0-93ff-dd9eaa13b5cf
+	FML: 20.4
+	NeoForge: net.neoforged:20.4.214

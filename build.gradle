@@ -1,186 +1,142 @@
-buildscript {
-    repositories {
-        maven { url = 'https://files.minecraftforge.net/maven' }
-        maven { url = 'https://repo.spongepowered.org/maven' }
-        jcenter()
-        mavenCentral()
-    }
-    dependencies {
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1+', changing: true
-        classpath group: 'org.spongepowered', name: 'mixingradle', version: '0.7-SNAPSHOT'
-        classpath "gradle.plugin.com.matthewprenger:CurseGradle:1.4.0"
-        classpath group: 'gradle.plugin.com.modrinth.minotaur', name: 'Minotaur', version: '1.1.0'
-    }
+plugins {
+    id 'java-library'
+    id 'eclipse'
+    id 'idea'
+    id 'maven-publish'
+    id 'net.neoforged.gradle.userdev' version '7.0.142'
+    id 'net.darkhax.curseforgegradle' version '1.1.15'
+    id "com.modrinth.minotaur" version "2.+"
 }
 
-apply plugin: 'net.minecraftforge.gradle'
-apply plugin: 'org.spongepowered.mixin'
-apply plugin: "com.matthewprenger.cursegradle"
-apply plugin: 'maven-publish'
-
-version = "1.19.2-1.0"
 def env = System.getenv()
 if (env.GITHUB_RUN_NUMBER) {
-    version = version + "+" + "${env.GITHUB_RUN_NUMBER}"
+    mod_version = '1.20.4-1.0.0' + "." + "${env.GITHUB_RUN_NUMBER}"
 }
 
-group = 'uk.co.hexeption'
-archivesBaseName = 'minis'
+version = mod_version
+group = mod_group_id
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
-
-println(' Java: ' + System.getProperty('java.version') +
-        ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ')' +
-        ' Arch: ' + System.getProperty('os.arch'))
-
-minecraft {
-    mappings channel: 'official', version: '1.19.2'
-    runs {
-        client {
-            workingDirectory project.file('run/client')
-
-            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
-            arg "-mixin.config=minis.mixins.json"
-
-            property 'forge.logging.console.level', 'debug'
-
-            mods {
-                minis {
-                    source sourceSets.main
-                }
-            }
+repositories {
+    mavenLocal()
+    maven {
+        name = "Progwml6 maven"
+        url = "https://dvs1.progwml6.com/files/maven/"
+    }
+    maven {
+        name = "Jared's maven"
+        url = "https://maven.blamejared.com/"
+    }
+    maven {
+        name = "ModMaven"
+        url = "https://modmaven.dev"
+    }
+    maven {
+        url "https://www.cursemaven.com"
+        content {
+            includeGroup "curse.maven"
         }
+    }
+}
 
-        server {
-            workingDirectory project.file('run/server')
+base {
+    archivesName = mod_id + "-neoforge"
+}
 
-            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
-            arg "-mixin.config=minis.mixins.json"
+// Mojang ships Java 21 to end users starting in 1.20.5, so mods should target Java 21.
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
-            property 'forge.logging.console.level', 'debug'
+runs {
+    configureEach {
+        systemProperty 'forge.logging.markers', 'REGISTRIES'
+        systemProperty 'forge.logging.console.level', 'debug'
 
-            mods {
-                minis {
-                    source sourceSets.main
-                }
-            }
-        }
+        modSource project.sourceSets.main
+    }
 
-        data {
-            workingDirectory project.file('run/data')
+    client {
+        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+    }
 
-            // Recommended logging data for a userdev environment
-            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+    server {
+        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+        programArgument '--nogui'
+    }
 
-            // Recommended logging level for the console
-            property 'forge.logging.console.level', 'debug'
+    gameTestServer {
+        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+    }
 
-            // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
-            args '--mod', 'minis', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
-
-            mods {
-                minis {
-                    source sourceSets.main
-                }
-            }
-        }
+    data {
+        programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
     }
 }
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
+configurations {
+    runtimeClasspath.extendsFrom localRuntime
+}
+
 dependencies {
-    minecraft 'net.minecraftforge:forge:1.19.2-43.1.1'
+    implementation "net.neoforged:neoforge:${neo_version}"
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+    runtimeOnly "mezz.jei:jei-1.20.6-neoforge:18.0.0.62"
 }
 
-jar {
-    manifest {
-        attributes([
-                "Specification-Title"     : "minis",
-                //"Specification-Vendor": "minis authors",
-                "Specification-Version"   : "1", // We are version 1 of ourselves
-                "Implementation-Title"    : project.name,
-                "Implementation-Version"  : project.version,
-                //"Implementation-Vendor": "minis authors",
-                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
-                "MixinConfigs"            : "minis.mixins.json"
-        ])
-    }
-}
+tasks.withType(ProcessResources).configureEach {
+    var replaceProperties = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            neo_version            : neo_version,
+            neo_version_range      : neo_version_range,
+            loader_version_range   : loader_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : mod_version,
+            mod_authors            : mod_authors,
+            mod_description        : mod_description
+    ]
+    inputs.properties replaceProperties
 
-jar.finalizedBy('reobfJar')
-
-mixin {
-    add sourceSets.main, "minis.refmap.json"
-}
-
-task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
-}
-
-task deobfJar(type: Jar) {
-    from sourceSets.main.output
-    classifier 'deobf'
-}
-
-artifacts {
-    archives jar
-    archives sourcesJar
-    archives deobfJar
-}
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            artifact jar
-            artifact sourcesJar
-            artifact deobfJar
-        }
-    }
-
-    repositories {
-        if (project.hasProperty("mavenPass")) {
-            maven {
-                url = "https://nexus.hexeption.dev/repository/hex-mods/"
-                credentials {
-                    username = "admin"
-                    password = System.getenv("MAVEN_PASS")
-                }
-            }
-        }
+    filesMatching(['META-INF/mods.toml']) {
+        expand replaceProperties
     }
 }
 
 
-curseforge {
-    if (System.getenv("CURSE_API_KEY")) {
-        apiKey = System.getenv("CURSE_API_KEY")
-    }
-    project {
-        id = '472352'
-        changelog = 'A changelog can be found at https://github.com/Hexeption/Minis'
-        releaseType = 'release'
-        addGameVersion '1.19'
-        addGameVersion '1.19.2'
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+}
 
-        mainArtifact(jar) {
-            displayName = "Minis v$version"
-        }
+// IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
     }
 }
 
-import com.modrinth.minotaur.TaskModrinthUpload
+task publishCurseForge(type: net.darkhax.curseforgegradle.TaskPublishCurseForge) {
 
-task publishModrinth (type: TaskModrinthUpload) {
-    if (System.getenv("MODRINTH_API_KEY")) {
-        token = System.getenv("MODRINTH_API_KEY")
-    }
+    apiToken = env.CURSE_API_KEY
+
+    // The main file to upload
+    def mainFile = upload(472352, jar)
+    mainFile.releaseType = 'release'
+    mainFile.changelog = 'A changelog can be found at https://github.com/Hexeption/Minis'
+    mainFile.changelogType = 'markdown'
+    mainFile.gameVersions = ['1.20.4']
+    mainFile.addModLoader("neoforge")
+    mainFile.displayName = "Minis ${version}"
+}
+
+modrinth {
+    token = env.MODRINTH_API_KEY
     projectId = 'AagJT5ms'
-    versionName = "Minis v$version"
+    versionName = "Minis $version"
     changelog = 'A changelog can be found at https://github.com/Hexeption/Minis'
-    versionNumber = "$version"
     uploadFile = jar
-    addGameVersion("1.19.2")
-    addLoader('forge')
+    gameVersions = ["1.20.4"]
+    loaders = ["neoforge"]
 }

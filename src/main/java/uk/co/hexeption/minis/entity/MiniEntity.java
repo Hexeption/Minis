@@ -5,10 +5,12 @@ import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 import com.mojang.authlib.properties.Property;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.DefaultPlayerSkin;
+import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.client.resources.SkinManager;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -24,9 +26,8 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.entity.IEntityAdditionalSpawnData;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import uk.co.hexeption.minis.util.SkinUtil;
 
 import javax.annotation.Nullable;
@@ -40,7 +41,7 @@ import java.util.UUID;
  * @author Hexeption admin@hexeption.co.uk
  * @since 13/04/2021 - 03:50 pm
  */
-public class MiniEntity extends PathfinderMob implements IEntityAdditionalSpawnData {
+public class MiniEntity extends PathfinderMob {
 
 	protected static final EntityDataAccessor<Optional<UUID>> OWNER_UNIQUE_ID = SynchedEntityData.defineId(MiniEntity.class, EntityDataSerializers.OPTIONAL_UUID);
 
@@ -71,32 +72,33 @@ public class MiniEntity extends PathfinderMob implements IEntityAdditionalSpawnD
 		super.defineSynchedData();
 		this.entityData.define(OWNER_UNIQUE_ID, Optional.empty());
 	}
+
 	@OnlyIn(Dist.CLIENT)
 	public ResourceLocation getSkinLocation() {
 		if (getOwnerId() == null) {
-			setOwnerId(Minecraft.getInstance().player.getUUID());
+			setOwnerId(Minecraft.getInstance().player.getUUID(), Minecraft.getInstance().player.getName().getString());
 		}
 		if (textureB64 == null) {
 			textureB64 = SkinUtil.getHeadValue(getOwnerId());
 		}
 		if (textureB64.equals("nil")) {
-			return DefaultPlayerSkin.getDefaultSkin(getOwnerId());
+			return DefaultPlayerSkin.get(getOwnerId()).texture();
 		}
-		GameProfile gameProfile = new GameProfile(getOwnerId(), null);
+
+		GameProfile gameProfile = new GameProfile(getOwnerId(), "MiniEntity");
 		gameProfile.getProperties().put("textures", new Property("textures", textureB64));
 		if (gameProfile.getProperties().get("textures") != null) {
 			final SkinManager manager = Minecraft.getInstance().getSkinManager();
-			Map<MinecraftProfileTexture.Type, MinecraftProfileTexture> map = manager.getInsecureSkinInformation(gameProfile);
-			if (map.containsKey(MinecraftProfileTexture.Type.SKIN)) {
-				final MinecraftProfileTexture skin = map.get(MinecraftProfileTexture.Type.SKIN);
-				return manager.registerTexture(skin, MinecraftProfileTexture.Type.SKIN);
-			} else {
-				UUID uuid = UUIDUtil.getOrCreatePlayerUUID(gameProfile);
-				return DefaultPlayerSkin.getDefaultSkin(uuid);
+			PlayerSkin map = manager.getInsecureSkin(gameProfile);
+			if(map != null){
+				return map.texture();
+			}else {
+				UUID uuid = UUIDUtil.createOfflinePlayerUUID(gameProfile.getName());
+				return DefaultPlayerSkin.get(uuid).texture();
 			}
 		} else {
-			UUID uuid = UUIDUtil.getOrCreatePlayerUUID(gameProfile);
-			return DefaultPlayerSkin.getDefaultSkin(uuid);
+			UUID uuid = UUIDUtil.createOfflinePlayerUUID(gameProfile.getName());
+			return DefaultPlayerSkin.get(uuid).texture();
 		}
 	}
 
@@ -122,7 +124,7 @@ public class MiniEntity extends PathfinderMob implements IEntityAdditionalSpawnD
 
 		if (uuid != null) {
 			try {
-				this.setOwnerId(uuid);
+				this.setOwnerId(uuid, compound.getString("Owner"));
 			} catch (Throwable throwable) {
 			}
 		}
@@ -133,8 +135,9 @@ public class MiniEntity extends PathfinderMob implements IEntityAdditionalSpawnD
 		return this.entityData.get(OWNER_UNIQUE_ID).orElse((UUID) null);
 	}
 
-	public void setOwnerId(@Nullable UUID uuid) {
+	public void setOwnerId(@Nullable UUID uuid, String name) {
 		this.entityData.set(OWNER_UNIQUE_ID, Optional.ofNullable(uuid));
+		setCustomName(Component.literal(name));
 	}
 
 	@Override
@@ -142,12 +145,6 @@ public class MiniEntity extends PathfinderMob implements IEntityAdditionalSpawnD
 		return false;
 	}
 
-	@Override
-	public void writeSpawnData(FriendlyByteBuf buffer) {
-	}
 
-	@Override
-	public void readSpawnData(FriendlyByteBuf additionalData) {
 
-	}
 }

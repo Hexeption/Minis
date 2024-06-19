@@ -18,7 +18,7 @@ import net.minecraft.network.chat.Component;
  * @author Hexeption admin@hexeption.co.uk
  * @since 22/05/2021 - 04:38 am
  */
-@Mixin(EntityRenderer.class)
+@Mixin(value = EntityRenderer.class, remap = false)
 public class MixinEntityRenderer<T extends Entity> {
 
 	@Inject(method = "renderNameTag", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/PoseStack;scale(FFF)V"))
