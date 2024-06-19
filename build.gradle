@@ -135,7 +135,7 @@ task publishCurseForge(type: net.darkhax.curseforgegradle.TaskPublishCurseForge)
     mainFile.releaseType = 'release'
     mainFile.changelog = 'A changelog can be found at https://github.com/Hexeption/Minis'
     mainFile.changelogType = 'markdown'
-    mainFile.gameVersions = ["${minecraft_version}"]
+    mainFile.gameVersions = ["1.21"]
     mainFile.addModLoader("neoforge")
     mainFile.displayName = "Minis ${version}"
 }
@@ -146,6 +146,6 @@ modrinth {
     versionName = "Minis $version"
     changelog = 'A changelog can be found at https://github.com/Hexeption/Minis'
     uploadFile = jar
-    gameVersions = ["${minecraft_version}"]
+    gameVersions = ["1.21"]
     loaders = ["neoforge"]
 }
