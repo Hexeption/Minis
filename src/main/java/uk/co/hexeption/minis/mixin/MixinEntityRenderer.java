@@ -22,10 +22,10 @@ import net.minecraft.network.chat.Component;
 public class MixinEntityRenderer<T extends Entity> {
 
 	@Inject(method = "renderNameTag", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/PoseStack;scale(FFF)V"))
-	private void renderNameTag(T entityIn, Component displayNameIn, PoseStack matrixStackIn, MultiBufferSource bufferIn, int packedLightIn, CallbackInfo ci) {
-		if(entityIn instanceof MiniEntity){
-			matrixStackIn.translate(0.0D, 0.5, 0.0D);
-			matrixStackIn.scale(2.2F, 2.2F, 2.2F);
+	private void renderNameTag(T pEntity, Component pDisplayName, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight, float pPartialTick, CallbackInfo ci) {
+		if(pEntity instanceof MiniEntity){
+			pPoseStack.translate(0.0D, 0.5, 0.0D);
+			pPoseStack.scale(2.2F, 2.2F, 2.2F);
 		}
 	}
 

@@ -10,7 +10,7 @@ plugins {
 
 def env = System.getenv()
 if (env.GITHUB_RUN_NUMBER) {
-    mod_version = '1.20.4-1.0.0' + "." + "${env.GITHUB_RUN_NUMBER}"
+    mod_version = '1.20.6-1.0.0' + "." + "${env.GITHUB_RUN_NUMBER}"
 }
 
 version = mod_version
@@ -99,7 +99,7 @@ tasks.withType(ProcessResources).configureEach {
     ]
     inputs.properties replaceProperties
 
-    filesMatching(['META-INF/mods.toml']) {
+    filesMatching(['META-INF/neoforge.mods.toml']) {
         expand replaceProperties
     }
 }
@@ -126,7 +126,7 @@ task publishCurseForge(type: net.darkhax.curseforgegradle.TaskPublishCurseForge)
     mainFile.releaseType = 'release'
     mainFile.changelog = 'A changelog can be found at https://github.com/Hexeption/Minis'
     mainFile.changelogType = 'markdown'
-    mainFile.gameVersions = ['1.20.4']
+    mainFile.gameVersions = ['1.20.6']
     mainFile.addModLoader("neoforge")
     mainFile.displayName = "Minis ${version}"
 }
@@ -137,6 +137,6 @@ modrinth {
     versionName = "Minis $version"
     changelog = 'A changelog can be found at https://github.com/Hexeption/Minis'
     uploadFile = jar
-    gameVersions = ["1.20.4"]
+    gameVersions = ["1.20.6"]
     loaders = ["neoforge"]
 }

@@ -65,12 +65,11 @@ public class MiniEntity extends PathfinderMob {
 		this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
 	}
 
-
-
 	@Override
-	protected void defineSynchedData() {
-		super.defineSynchedData();
-		this.entityData.define(OWNER_UNIQUE_ID, Optional.empty());
+	protected void defineSynchedData(SynchedEntityData.Builder pBuilder) {
+
+		super.defineSynchedData(pBuilder);
+		pBuilder.define(OWNER_UNIQUE_ID, Optional.empty());
 	}
 
 	@OnlyIn(Dist.CLIENT)
