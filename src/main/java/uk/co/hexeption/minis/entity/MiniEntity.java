@@ -4,6 +4,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 import com.mojang.authlib.properties.Property;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.client.resources.SkinManager;
@@ -25,15 +26,19 @@ import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.SkullBlockEntity;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import uk.co.hexeption.minis.Minis;
 import uk.co.hexeption.minis.util.SkinUtil;
 
 import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * MiniEntity
@@ -45,7 +50,16 @@ public class MiniEntity extends PathfinderMob {
 
 	protected static final EntityDataAccessor<Optional<UUID>> OWNER_UNIQUE_ID = SynchedEntityData.defineId(MiniEntity.class, EntityDataSerializers.OPTIONAL_UUID);
 
+	private ResolvableProfile owner;
 	private String textureB64 = null;
+	public double xCloakO;
+	public double yCloakO;
+	public double zCloakO;
+	public double xCloak;
+	public double yCloak;
+	public double zCloak;
+	public float oBob;
+	public float bob;
 
 	public MiniEntity(EntityType<? extends PathfinderMob> type, Level worldIn) {
 		super(type, worldIn);
@@ -75,7 +89,7 @@ public class MiniEntity extends PathfinderMob {
 	@OnlyIn(Dist.CLIENT)
 	public ResourceLocation getSkinLocation() {
 		if (getOwnerId() == null) {
-			setOwnerId(Minecraft.getInstance().player.getUUID(), Minecraft.getInstance().player.getName().getString());
+			setOwnerId(Minecraft.getInstance().player.getUUID());
 		}
 		if (textureB64 == null) {
 			textureB64 = SkinUtil.getHeadValue(getOwnerId());
@@ -123,7 +137,7 @@ public class MiniEntity extends PathfinderMob {
 
 		if (uuid != null) {
 			try {
-				this.setOwnerId(uuid, compound.getString("Owner"));
+				this.setOwnerId(uuid);
 			} catch (Throwable throwable) {
 			}
 		}
@@ -134,15 +148,85 @@ public class MiniEntity extends PathfinderMob {
 		return this.entityData.get(OWNER_UNIQUE_ID).orElse((UUID) null);
 	}
 
-	public void setOwnerId(@Nullable UUID uuid, String name) {
+	public void setOwnerId(@Nullable UUID uuid) {
 		this.entityData.set(OWNER_UNIQUE_ID, Optional.ofNullable(uuid));
-		setCustomName(Component.literal(name));
+		 SkullBlockEntity.fetchGameProfile(this.getOwnerId()).thenAccept(gameProfile -> {
+			setCustomName(Component.literal(gameProfile.get().getName()));
+		});
 	}
 
 	@Override
 	public boolean removeWhenFarAway(double distanceToClosestPlayer) {
 		return false;
 	}
+
+
+	@OnlyIn(Dist.CLIENT)
+	public PlayerSkin getSkin() {
+
+		var profile = SkullBlockEntity.fetchGameProfile(this.getOwnerId()).getNow(null);
+		if (profile != null) {
+			var skin = Minecraft.getInstance().getSkinManager().getInsecureSkin(profile.get());
+			if (skin != null) {
+				return skin;
+			}
+		}
+
+		return DefaultPlayerSkin.get(this.getOwnerId());
+
+	}
+
+	@Override
+	public void tick() {
+
+		super.tick();
+		this.moveCloak();
+	}
+
+	private void moveCloak() {
+		this.xCloakO = this.xCloak;
+		this.yCloakO = this.yCloak;
+		this.zCloakO = this.zCloak;
+		double d0 = this.getX() - this.xCloak;
+		double d1 = this.getY() - this.yCloak;
+		double d2 = this.getZ() - this.zCloak;
+		double d3 = 10.0;
+		if (d0 > 10.0) {
+			this.xCloak = this.getX();
+			this.xCloakO = this.xCloak;
+		}
+
+		if (d2 > 10.0) {
+			this.zCloak = this.getZ();
+			this.zCloakO = this.zCloak;
+		}
+
+		if (d1 > 10.0) {
+			this.yCloak = this.getY();
+			this.yCloakO = this.yCloak;
+		}
+
+		if (d0 < -10.0) {
+			this.xCloak = this.getX();
+			this.xCloakO = this.xCloak;
+		}
+
+		if (d2 < -10.0) {
+			this.zCloak = this.getZ();
+			this.zCloakO = this.zCloak;
+		}
+
+		if (d1 < -10.0) {
+			this.yCloak = this.getY();
+			this.yCloakO = this.yCloak;
+		}
+
+		this.xCloak += d0 * 0.25;
+		this.zCloak += d2 * 0.25;
+		this.yCloak += d1 * 0.25;
+	}
+
+
 
 
 

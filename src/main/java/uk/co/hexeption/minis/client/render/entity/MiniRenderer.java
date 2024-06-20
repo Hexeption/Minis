@@ -3,6 +3,7 @@ package uk.co.hexeption.minis.client.render.entity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import uk.co.hexeption.minis.client.render.entity.layers.CustomCapeLayer;
 import uk.co.hexeption.minis.entity.MiniEntity;
 
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -27,6 +28,7 @@ public class MiniRenderer extends HumanoidMobRenderer<MiniEntity, PlayerModel<Mi
     public void render(MiniEntity entityIn, float entityYaw, float partialTicks, PoseStack matrixStackIn, MultiBufferSource bufferIn, int packedLightIn) {
         matrixStackIn.scale(0.5f, 0.5f, 0.5f);
         super.render(entityIn, entityYaw, partialTicks, matrixStackIn, bufferIn, packedLightIn);
+        this.addLayer(new CustomCapeLayer(this));
     }
 
     @Override
