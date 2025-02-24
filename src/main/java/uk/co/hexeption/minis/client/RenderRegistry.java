@@ -6,8 +6,11 @@ import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import uk.co.hexeption.minis.Minis;
+import uk.co.hexeption.minis.client.gui.MiniInventoryMenuScreen;
 import uk.co.hexeption.minis.client.render.entity.MiniRenderer;
+import uk.co.hexeption.minis.init.MenuInit;
 import uk.co.hexeption.minis.init.ModEntities;
 
 /**
@@ -26,5 +29,12 @@ public class RenderRegistry {
         Minis.LOGGER.info("Register Renderers");
         event.registerEntityRenderer(ModEntities.MINI_ENTITY.get(), (EntityRendererProvider.Context p_174557_) -> new MiniRenderer(p_174557_, true));
     }
+
+    @SubscribeEvent
+    public static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
+        Minis.LOGGER.info("Register Menu Screens");
+        event.register(MenuInit.MINI_INVENTORY.get(), MiniInventoryMenuScreen::new);
+    }
+
 
 }

@@ -5,6 +5,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import uk.co.hexeption.minis.init.MenuInit;
 import uk.co.hexeption.minis.init.ModEntities;
 
 @Mod("minis")
@@ -16,6 +17,7 @@ public class Minis {
 
     public Minis(IEventBus modEventBus, ModContainer modContainer) {
         ModEntities.ENTITY_TYPES.register(modEventBus);
+        MenuInit.register(modEventBus);
     }
 
 

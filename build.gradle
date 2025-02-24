@@ -47,6 +47,12 @@ repositories {
     }
 }
 
+minecraft {
+    accessTransformers {
+        file('src/main/resources/META-INF/accesstransformer.cfg')
+    }
+}
+
 base {
     archivesName = mod_id + "-neoforge"
 }
