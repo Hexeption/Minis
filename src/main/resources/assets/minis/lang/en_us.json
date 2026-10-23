@@ -1,0 +1,4 @@
+{
+  "entity.minis.mini": "Mini",
+  "commands.minis.spawn.success": "Spawned a Mini of %s"
+}
