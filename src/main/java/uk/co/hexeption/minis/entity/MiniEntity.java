@@ -12,6 +12,9 @@ import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.food.FoodProperties;
+//? if >=1.20.5
+import net.minecraft.core.component.DataComponents;
 import uk.co.hexeption.minis.item.MiniItem;
 import uk.co.hexeption.minis.menu.MiniMenu;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -245,6 +248,27 @@ public class MiniEntity extends PathfinderMob {
 		return this.getMode() == MiniMode.SIT;
 	}
 
+	// Food heals a hurt Mini by as much as it would fill a player's hunger
+	public boolean feed(ItemStack stack) {
+		int nutrition = nutrition(stack);
+		if (nutrition <= 0 || this.getHealth() >= this.getMaxHealth()) {
+			return false;
+		}
+
+		this.heal(nutrition);
+		return true;
+	}
+
+	private static int nutrition(ItemStack stack) {
+		//? if >=1.20.5 {
+		FoodProperties food = stack.get(DataComponents.FOOD);
+		return food == null ? 0 : food.nutrition();
+		//?} else {
+		/*FoodProperties food = stack.getItem().getFoodProperties();
+		return food == null ? 0 : food.getNutrition();
+		*///?}
+	}
+
 	// Everything about the Mini except where it is, for storing in a MiniItem
 	public CompoundTag saveForItem() {
 		//? if >=1.21.6 {
@@ -285,7 +309,7 @@ public class MiniEntity extends PathfinderMob {
 		}
 	}
 
-	// Right click opens the Mini's screen for its owner, and sneaking picks it up.
+	// Right click opens the Mini's screen for its owner, or feeds it when they're holding food. Sneaking picks it up.
 	// A Mini without an owner belongs to whoever clicks it first.
 	@Override
 	protected InteractionResult mobInteract(Player player, InteractionHand hand) {
@@ -296,6 +320,13 @@ public class MiniEntity extends PathfinderMob {
 		if (!this.level().isClientSide()) {
 			if (this.getOwnerId() == null) {
 				this.setOwnerId(player.getUUID());
+			}
+			ItemStack held = player.getItemInHand(hand);
+			if (!player.isShiftKeyDown() && this.feed(held)) {
+				if (!player.isCreative()) {
+					held.shrink(1);
+				}
+				return InteractionResult.SUCCESS;
 			}
 			if (player.isShiftKeyDown()) {
 				ItemStack stack = MiniItem.of(this);

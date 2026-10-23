@@ -7,6 +7,7 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
@@ -142,6 +143,29 @@ public class MiniScreen extends AbstractContainerScreen<MiniMenu> {
 		return false;
 	}
 
+	private static final String HEART = "\u2764";
+
+	// One heart per two points of max health, eight to a row
+	private void drawHearts(TextDrawer text) {
+		LivingEntity mini = this.mini();
+		if (mini == null) {
+			return;
+		}
+
+		int hearts = Mth.ceil(mini.getMaxHealth() / 2.0F);
+		float health = mini.getHealth();
+		for (int i = 0; i < hearts; i++) {
+			float left = health - i * 2;
+			int color = left >= 2 ? 0xFFE03030 : left >= 1 ? 0xFFF08080 : 0xFF555555;
+			text.draw(HEART, 98 + (i % 8) * 9, 86 + (i / 8) * 9, color);
+		}
+	}
+
+	@FunctionalInterface
+	private interface TextDrawer {
+		void draw(String text, int x, int y, int color);
+	}
+
 	private String shownName() {
 		return this.font.plainSubstrByWidth(this.name, 144);
 	}
@@ -153,6 +177,7 @@ public class MiniScreen extends AbstractContainerScreen<MiniMenu> {
 		if (!this.editing) {
 			graphics.text(this.font, this.shownName(), 8, 7, 0xFF404040, false);
 		}
+		this.drawHearts((text, x, y, color) -> graphics.text(this.font, text, x, y, color, false));
 	}
 	//?} else {
 	/*@Override
@@ -161,6 +186,7 @@ public class MiniScreen extends AbstractContainerScreen<MiniMenu> {
 		if (!this.editing) {
 			graphics.drawString(this.font, this.shownName(), 8, 7, 0xFF404040, false);
 		}
+		this.drawHearts((text, x, y, color) -> graphics.drawString(this.font, text, x, y, color, false));
 	}
 	*///?}
 

@@ -84,6 +84,7 @@ public class MiniGameTests {
             registry.register(Minis.id("sitting_mini_stays_put"), MiniGameTests::sittingMiniStaysPut);
             registry.register(Minis.id("mode_buttons_change_the_mode"), MiniGameTests::modeButtonsChangeTheMode);
             registry.register(Minis.id("picked_up_mini_comes_back_the_same"), MiniGameTests::pickedUpMiniComesBackTheSame);
+            registry.register(Minis.id("food_heals_a_hurt_mini"), MiniGameTests::foodHealsAHurtMini);
         });
     }
     //?} else if >=1.21.5 {
@@ -94,6 +95,7 @@ public class MiniGameTests {
         Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("sitting_mini_stays_put"), MiniGameTests::sittingMiniStaysPut);
         Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("mode_buttons_change_the_mode"), MiniGameTests::modeButtonsChangeTheMode);
         Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("picked_up_mini_comes_back_the_same"), MiniGameTests::pickedUpMiniComesBackTheSame);
+        Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("food_heals_a_hurt_mini"), MiniGameTests::foodHealsAHurtMini);
     }
     *///?} else {
     /*//? if fabric {
@@ -132,6 +134,11 @@ public class MiniGameTests {
     @GameTest(template = TEMPLATE)
     public void pickedUpMiniComesBackTheSameTest(GameTestHelper helper) {
         pickedUpMiniComesBackTheSame(helper);
+    }
+
+    @GameTest(template = TEMPLATE)
+    public void foodHealsAHurtMiniTest(GameTestHelper helper) {
+        foodHealsAHurtMini(helper);
     }
     *///?}
 
@@ -236,6 +243,19 @@ public class MiniGameTests {
         check(helper, placed.getMode() == MiniMode.SIT, "The placed Mini lost its mode");
         check(helper, placed.getItemBySlot(EquipmentSlot.CHEST).is(Items.IRON_CHESTPLATE), "The placed Mini lost its armor");
         check(helper, placed.getInventory().getItem(8).is(Items.EMERALD), "The placed Mini lost its inventory");
+        helper.succeed();
+    }
+
+    public static void foodHealsAHurtMini(GameTestHelper helper) {
+        MiniEntity mini = helper.spawn(ModEntities.MINI_ENTITY.get(), SPAWN);
+        mini.setHealth(4.0F);
+
+        check(helper, mini.feed(new ItemStack(Items.BREAD)), "A hurt Mini wouldn't eat bread");
+        check(helper, mini.getHealth() == 9.0F, "Bread should heal 5 but the Mini is on " + mini.getHealth());
+        check(helper, !mini.feed(new ItemStack(Items.DIRT)), "A Mini ate dirt");
+
+        mini.setHealth(mini.getMaxHealth());
+        check(helper, !mini.feed(new ItemStack(Items.BREAD)), "A Mini at full health still ate");
         helper.succeed();
     }
 
