@@ -8,6 +8,13 @@ import uk.co.hexeption.minis.Minis;
 import net.minecraft.world.level.block.Blocks;
 import uk.co.hexeption.minis.entity.MiniEntity;
 import uk.co.hexeption.minis.entity.MiniMode;
+import uk.co.hexeption.minis.menu.MiniMenu;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+//? if >=1.20.5
+import net.minecraft.world.level.GameType;
 import uk.co.hexeption.minis.init.ModEntities;
 
 //? if >=1.21.6 {
@@ -73,6 +80,7 @@ public class MiniGameTests {
             registry.register(Minis.id("mini_is_half_player_size"), MiniGameTests::miniIsHalfPlayerSize);
             registry.register(Minis.id("mini_keeps_owner_when_saved"), MiniGameTests::miniKeepsOwnerWhenSaved);
             registry.register(Minis.id("sitting_mini_stays_put"), MiniGameTests::sittingMiniStaysPut);
+            registry.register(Minis.id("mode_buttons_change_the_mode"), MiniGameTests::modeButtonsChangeTheMode);
         });
     }
     //?} else if >=1.21.5 {
@@ -81,6 +89,7 @@ public class MiniGameTests {
         Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("mini_is_half_player_size"), MiniGameTests::miniIsHalfPlayerSize);
         Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("mini_keeps_owner_when_saved"), MiniGameTests::miniKeepsOwnerWhenSaved);
         Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("sitting_mini_stays_put"), MiniGameTests::sittingMiniStaysPut);
+        Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("mode_buttons_change_the_mode"), MiniGameTests::modeButtonsChangeTheMode);
     }
     *///?} else {
     /*//? if fabric {
@@ -110,6 +119,11 @@ public class MiniGameTests {
     public void sittingMiniStaysPutTest(GameTestHelper helper) {
         sittingMiniStaysPut(helper);
     }
+
+    @GameTest(template = TEMPLATE)
+    public void modeButtonsChangeTheModeTest(GameTestHelper helper) {
+        modeButtonsChangeTheMode(helper);
+    }
     *///?}
 
     private static void check(GameTestHelper helper, boolean condition, String message) {
@@ -138,6 +152,8 @@ public class MiniGameTests {
         MiniEntity mini = helper.spawn(ModEntities.MINI_ENTITY.get(), SPAWN);
         mini.setOwnerId(OWNER);
         mini.setMode(MiniMode.FOLLOW);
+        mini.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.DIAMOND_HELMET));
+        mini.getInventory().setItem(3, new ItemStack(Items.DIAMOND, 5));
 
         //? if >=1.21.2 {
         MiniEntity loaded = ModEntities.MINI_ENTITY.get().create(helper.getLevel(), EntitySpawnReason.LOAD);
@@ -152,6 +168,8 @@ public class MiniGameTests {
 
         check(helper, OWNER.equals(loaded.getOwnerId()), "Expected owner " + OWNER + " after loading but got " + loaded.getOwnerId());
         check(helper, loaded.getMode() == MiniMode.FOLLOW, "Expected the follow mode after loading but got " + loaded.getMode());
+        check(helper, loaded.getItemBySlot(EquipmentSlot.HEAD).is(Items.DIAMOND_HELMET), "The Mini lost its helmet when saved");
+        check(helper, loaded.getInventory().getItem(3).is(Items.DIAMOND) && loaded.getInventory().getItem(3).getCount() == 5, "The Mini lost its inventory when saved");
         helper.succeed();
     }
 
@@ -167,6 +185,21 @@ public class MiniGameTests {
             check(helper, mini.getNavigation().isDone(), "A sitting Mini is still following a path");
             check(helper, Math.abs(mini.getZ() - startZ) < 0.5D, "A sitting Mini moved " + (mini.getZ() - startZ) + " blocks");
         });
+    }
+
+    public static void modeButtonsChangeTheMode(GameTestHelper helper) {
+        MiniEntity mini = helper.spawn(ModEntities.MINI_ENTITY.get(), SPAWN);
+        //? if >=1.20.5 {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        //?} else
+        /*Player player = helper.makeMockPlayer();*/
+        mini.setOwnerId(player.getUUID());
+
+        MiniMenu menu = new MiniMenu(0, player.getInventory(), mini);
+        menu.clickMenuButton(player, MiniMode.SIT.ordinal());
+
+        check(helper, mini.getMode() == MiniMode.SIT && menu.getMode() == MiniMode.SIT, "The sit button left the Mini in " + mini.getMode());
+        helper.succeed();
     }
 
     // Stone floor for movement tests. Starts at z=1 to leave the structure block at the origin alone

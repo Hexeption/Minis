@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minis:mode_buttons_change_the_mode",
+  "max_ticks": 20,
+  "required": true,
+  "setup_ticks": 1,
+  "structure": "minis:minigametests.empty"
+}
