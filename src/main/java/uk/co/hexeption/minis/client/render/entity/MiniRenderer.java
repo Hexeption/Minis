@@ -37,12 +37,21 @@ public class MiniRenderer extends HumanoidMobRenderer<MiniEntity, AvatarRenderSt
 /*public class MiniRenderer extends HumanoidMobRenderer<MiniEntity, PlayerModel<MiniEntity>> {
 *///?}
 
+    // How far a sitting Mini drops so it sits on the ground instead of on thin air, in blocks
+    private static final float SITTING_DROP = 0.3125F;
+
     public MiniRenderer(EntityRendererProvider.Context context) {
         //? if >=1.21.2 {
         super(context, new PlayerModel(context.bakeLayer(ModelLayers.PLAYER_SLIM), true), 0.25f);
         this.addLayer(new CapeLayer(this, context.getModelSet(), context.getEquipmentAssets()));
         //?} else {
-        /*super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER_SLIM), true), 0.25f);
+        /*super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER_SLIM), true) {
+            @Override
+            public void setupAnim(MiniEntity mini, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
+                this.riding = mini.isSitting();
+                super.setupAnim(mini, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
+            }
+        }, 0.25f);
         this.addLayer(new CustomCapeLayer(this));
         *///?}
     }
@@ -67,6 +76,12 @@ public class MiniRenderer extends HumanoidMobRenderer<MiniEntity, AvatarRenderSt
     *///?}
         super.extractRenderState(mini, state, partialTick);
         state.scale *= 0.5f;
+        state.isPassenger = mini.isSitting();
+        //? if >=1.21.9 {
+        if (mini.isSitting()) {
+            state.y -= SITTING_DROP;
+        }
+        //?}
         state.skin = MiniSkins.skin(mini);
         state.showHat = true;
         state.showJacket = true;
@@ -97,11 +112,21 @@ public class MiniRenderer extends HumanoidMobRenderer<MiniEntity, AvatarRenderSt
     public Identifier getTextureLocation(PlayerRenderState state) {
         return state.skin.texture();
     }
+
+    @Override
+    protected void scale(PlayerRenderState state, PoseStack poseStack) {
+        if (state.isPassenger) {
+            poseStack.translate(0.0F, SITTING_DROP * 2.0F, 0.0F);
+        }
+    }
     *///?}
     //?} else {
     /*@Override
     protected void scale(MiniEntity mini, PoseStack poseStack, float partialTick) {
         poseStack.scale(0.5f, 0.5f, 0.5f);
+        if (mini.isSitting()) {
+            poseStack.translate(0.0F, SITTING_DROP * 2.0F, 0.0F);
+        }
     }
 
     @Override

@@ -1,4 +1,7 @@
 {
   "entity.minis.mini": "Mini",
-  "commands.minis.spawn.success": "Spawned a Mini of %s"
+  "commands.minis.spawn.success": "Spawned a Mini of %s",
+  "minis.mode.wander": "Wander",
+  "minis.mode.follow": "Follow",
+  "minis.mode.sit": "Sit"
 }

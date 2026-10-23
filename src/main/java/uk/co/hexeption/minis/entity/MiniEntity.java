@@ -17,6 +17,8 @@ import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
+import uk.co.hexeption.minis.entity.ai.MiniFollowOwnerGoal;
+import uk.co.hexeption.minis.entity.ai.MiniSitGoal;
 import uk.co.hexeption.minis.util.MiniProfiles;
 
 //? if >=1.21.6 {
@@ -37,6 +39,7 @@ public class MiniEntity extends PathfinderMob {
 
 	// The owner's UUID as a string, "" when it has none
 	protected static final EntityDataAccessor<String> OWNER = SynchedEntityData.defineId(MiniEntity.class, EntityDataSerializers.STRING);
+	protected static final EntityDataAccessor<Integer> MODE = SynchedEntityData.defineId(MiniEntity.class, EntityDataSerializers.INT);
 
 	public double xCloakO;
 	public double yCloakO;
@@ -58,9 +61,21 @@ public class MiniEntity extends PathfinderMob {
 	@Override
 	protected void registerGoals() {
 		this.goalSelector.addGoal(1, new FloatGoal(this));
-		this.goalSelector.addGoal(2, new RandomStrollGoal(this, 1D));
-		this.goalSelector.addGoal(3, new LookAtPlayerGoal(this, Player.class, 6.0F));
-		this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
+		this.goalSelector.addGoal(2, new MiniSitGoal(this));
+		this.goalSelector.addGoal(3, new MiniFollowOwnerGoal(this, 1.2D, 4.0D, 2.0D));
+		this.goalSelector.addGoal(4, new RandomStrollGoal(this, 1D) {
+			@Override
+			public boolean canUse() {
+				return getMode() == MiniMode.WANDER && super.canUse();
+			}
+
+			@Override
+			public boolean canContinueToUse() {
+				return getMode() == MiniMode.WANDER && super.canContinueToUse();
+			}
+		});
+		this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 6.0F));
+		this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
 	}
 
 	//? if >=1.20.5 {
@@ -68,12 +83,14 @@ public class MiniEntity extends PathfinderMob {
 	protected void defineSynchedData(SynchedEntityData.Builder builder) {
 		super.defineSynchedData(builder);
 		builder.define(OWNER, "");
+		builder.define(MODE, MiniMode.WANDER.ordinal());
 	}
 	//?} else {
 	/*@Override
 	protected void defineSynchedData() {
 		super.defineSynchedData();
 		this.entityData.define(OWNER, "");
+		this.entityData.define(MODE, MiniMode.WANDER.ordinal());
 	}
 	*///?}
 
@@ -82,12 +99,14 @@ public class MiniEntity extends PathfinderMob {
 	protected void addAdditionalSaveData(ValueOutput output) {
 		super.addAdditionalSaveData(output);
 		output.storeNullable("Owner", UUIDUtil.CODEC, this.getOwnerId());
+		output.putString("Mode", this.getMode().name());
 	}
 
 	@Override
 	protected void readAdditionalSaveData(ValueInput input) {
 		super.readAdditionalSaveData(input);
 		input.read("Owner", UUIDUtil.CODEC).ifPresent(this::setOwnerId);
+		this.setMode(MiniMode.byName(input.getStringOr("Mode", MiniMode.WANDER.name())));
 	}
 	//?} else {
 	/*@Override
@@ -96,6 +115,7 @@ public class MiniEntity extends PathfinderMob {
 		if (this.getOwnerId() != null) {
 			compound.putUUID("Owner", this.getOwnerId());
 		}
+		compound.putString("Mode", this.getMode().name());
 	}
 
 	@Override
@@ -104,6 +124,7 @@ public class MiniEntity extends PathfinderMob {
 		if (compound.hasUUID("Owner")) {
 			this.setOwnerId(compound.getUUID("Owner"));
 		}
+		this.setMode(MiniMode.byName(compound.getString("Mode")));
 	}
 	*///?}
 
@@ -121,6 +142,31 @@ public class MiniEntity extends PathfinderMob {
 			MiniProfiles.get(uuid).thenAccept(profile -> profile.ifPresent(found ->
 					serverLevel.getServer().execute(() -> this.setCustomName(Component.literal(found.name())))));
 		}
+	}
+
+	@Nullable
+	public Player getOwner() {
+		UUID owner = this.getOwnerId();
+		return owner == null ? null : this.level().getPlayerByUUID(owner);
+	}
+
+	public boolean isOwnedBy(Player player) {
+		return player.getUUID().equals(this.getOwnerId());
+	}
+
+	public MiniMode getMode() {
+		return MiniMode.byId(this.entityData.get(MODE));
+	}
+
+	public void setMode(MiniMode mode) {
+		this.entityData.set(MODE, mode.ordinal());
+		if (mode == MiniMode.SIT) {
+			this.getNavigation().stop();
+		}
+	}
+
+	public boolean isSitting() {
+		return this.getMode() == MiniMode.SIT;
 	}
 
 	@Override
