@@ -20,6 +20,15 @@ import net.minecraft.world.item.component.CustomData;
 //?}
 //? if >=1.21.2
 import net.minecraft.world.entity.EntitySpawnReason;
+//? if forgeLike && <1.21.4 {
+/*import java.util.function.Consumer;
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import uk.co.hexeption.minis.client.item.MiniItemBlockEntityRenderer;
+*///?}
+//? if neoforge && <1.21.4
+/*import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;*/
+//? if forge && <1.21.4
+/*import net.minecraftforge.client.extensions.common.IClientItemExtensions;*/
 
 /**
  * MiniItem
@@ -56,6 +65,23 @@ public class MiniItem extends Item {
 		//?} else
 		/*return stack.getTagElement("Mini");*/
 	}
+
+	//? if forgeLike && <1.21.4 {
+	/*@Override
+	public void initializeClient(Consumer<IClientItemExtensions> consumer) {
+		consumer.accept(new IClientItemExtensions() {
+			private BlockEntityWithoutLevelRenderer renderer;
+
+			@Override
+			public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+				if (this.renderer == null) {
+					this.renderer = new MiniItemBlockEntityRenderer();
+				}
+				return this.renderer;
+			}
+		});
+	}
+	*///?}
 
 	@Override
 	public Component getName(ItemStack stack) {

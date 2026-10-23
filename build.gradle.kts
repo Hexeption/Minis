@@ -30,6 +30,12 @@ loom {
         jvmArguments.add("-Ddevauth.enabled=true")
     }
     if (mod.isForge) {
+        // Registers the Mini's item renderer type, which Forge has no event for from 1.21.4
+        if (stonecutter.eval(minecraft, ">=1.21.4")) {
+            forge {
+                mixinConfig("${mod.id}.mixins.json")
+            }
+        }
         mods {
             register(mod.id) {
                 sourceSet(sourceSets.main.get())
@@ -73,6 +79,8 @@ modSettings {
         "license" to project.property("mod.license").toString(),
         "neoforgeVersionRange" to "[${mod.prop("neoforge_version", "0.0").substringBeforeLast('.')},)",
         "forgeLoaderVersion" to mod.prop("forge_loader_version", ""),
+        "miniItemParent" to if (stonecutter.eval(minecraft, "<1.21.4")) "builtin/entity" else "minecraft:block/block",
+        "fabricMixins" to if (mod.isFabric && stonecutter.eval(minecraft, ">=1.21.4")) "\"${mod.id}.mixins.json\"" else "",
     )
 }
 

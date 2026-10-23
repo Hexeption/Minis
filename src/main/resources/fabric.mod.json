@@ -16,6 +16,7 @@
     "client": ["${group}.client.MinisClient"],
     "fabric-gametest": ["${group}.gametest.MiniGameTests"]
   },
+  "mixins": [${fabricMixins}],
   "depends": {
     "fabricloader": ">=0.14.21",
     "fabric-api": "*",

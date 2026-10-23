@@ -1,6 +1,9 @@
 {
   "model": {
-    "type": "minecraft:model",
-    "model": "minis:item/mini"
+    "type": "minecraft:special",
+    "base": "minis:item/mini",
+    "model": {
+      "type": "minis:mini"
+    }
   }
 }
