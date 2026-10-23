@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minis:dungeon_chests_can_have_eggs",
+  "max_ticks": 20,
+  "required": true,
+  "setup_ticks": 1,
+  "structure": "minis:minigametests.empty"
+}

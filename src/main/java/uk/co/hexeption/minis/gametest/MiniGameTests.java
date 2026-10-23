@@ -11,6 +11,9 @@ import uk.co.hexeption.minis.entity.MiniEntity;
 import uk.co.hexeption.minis.entity.MiniUpgrade;
 import uk.co.hexeption.minis.init.ModItems;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.phys.AABB;
 import uk.co.hexeption.minis.entity.MiniMode;
 import uk.co.hexeption.minis.item.MiniItem;
 import uk.co.hexeption.minis.menu.MiniMenu;
@@ -92,6 +95,7 @@ public class MiniGameTests {
             registry.register(Minis.id("magnet_collects_nearby_items"), MiniGameTests::magnetCollectsNearbyItems);
             registry.register(Minis.id("upgrade_slots_take_one_of_each"), MiniGameTests::upgradeSlotsTakeOneOfEach);
             registry.register(Minis.id("combat_upgrade_lets_a_mini_fight"), MiniGameTests::combatUpgradeLetsAMiniFight);
+            registry.register(Minis.id("dungeon_chests_can_have_eggs"), MiniGameTests::dungeonChestsCanHaveEggs);
         });
     }
     //?} else if >=1.21.5 {
@@ -107,6 +111,7 @@ public class MiniGameTests {
         Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("magnet_collects_nearby_items"), MiniGameTests::magnetCollectsNearbyItems);
         Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("upgrade_slots_take_one_of_each"), MiniGameTests::upgradeSlotsTakeOneOfEach);
         Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("combat_upgrade_lets_a_mini_fight"), MiniGameTests::combatUpgradeLetsAMiniFight);
+        Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("dungeon_chests_can_have_eggs"), MiniGameTests::dungeonChestsCanHaveEggs);
     }
     *///?} else {
     /*//? if fabric {
@@ -170,6 +175,11 @@ public class MiniGameTests {
     @GameTest(template = TEMPLATE)
     public void combatUpgradeLetsAMiniFightTest(GameTestHelper helper) {
         combatUpgradeLetsAMiniFight(helper);
+    }
+
+    @GameTest(template = TEMPLATE)
+    public void dungeonChestsCanHaveEggsTest(GameTestHelper helper) {
+        dungeonChestsCanHaveEggs(helper);
     }
     *///?}
 
@@ -351,6 +361,24 @@ public class MiniGameTests {
 
         mini.setMode(MiniMode.SIT);
         check(helper, !mini.canFight(), "A sitting Mini can fight");
+        helper.succeed();
+    }
+
+    // Each dungeon chest has a one in four chance, so 40 chests without an egg would be about a one in 100,000 fluke
+    public static void dungeonChestsCanHaveEggs(GameTestHelper helper) {
+        BlockPos at = helper.absolutePos(SPAWN);
+        MinecraftServer server = helper.getLevel().getServer();
+        CommandSourceStack source = server.createCommandSourceStack().withLevel(helper.getLevel()).withSuppressedOutput();
+        for (int i = 0; i < 40; i++) {
+            server.getCommands().performPrefixedCommand(source, "loot spawn " + at.getX() + " " + at.getY() + " " + at.getZ() + " loot minecraft:chests/simple_dungeon");
+        }
+
+        AABB area = new AABB(at).inflate(2.0D);
+        boolean egg = !helper.getLevel().getEntitiesOfClass(ItemEntity.class, area, item -> item.getItem().is(ModItems.MINI_EGG.get())).isEmpty();
+        for (ItemEntity item : helper.getLevel().getEntitiesOfClass(ItemEntity.class, area)) {
+            item.discard();
+        }
+        check(helper, egg, "40 dungeon chests and not one Mini egg");
         helper.succeed();
     }
 
