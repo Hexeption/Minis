@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "${id}",
+  "version": "${version}",
+  "name": "${name}",
+  "description": "${description}",
+  "authors": ["${authors}"],
+  "contact": {
+    "sources": "https://github.com/Hexeption/Minis",
+    "issues": "https://github.com/Hexeption/Minis/issues"
+  },
+  "license": "${license}",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["${group}.Minis"],
+    "client": ["${group}.client.MinisClient"],
+    "fabric-gametest": ["${group}.gametest.MiniGameTests"]
+  },
+  "depends": {
+    "fabricloader": ">=0.14.21",
+    "fabric-api": "*",
+    "minecraft": "${minecraftVersion}"
+  }
+}
