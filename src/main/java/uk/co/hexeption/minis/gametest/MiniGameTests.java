@@ -69,8 +69,9 @@ import net.minecraft.core.registries.BuiltInRegistries;
 public class MiniGameTests {
 
     private static final BlockPos SPAWN = new BlockPos(1, 1, 1);
-    // jeb_
+    // jeb_ and Notch
     private static final UUID OWNER = UUID.fromString("853c80ef-3c37-49fd-aa49-938b674adae6");
+    private static final UUID SKIN = UUID.fromString("069a79f4-44e9-4726-a5be-fca90e38aaf5");
 
     //? if >=1.21.5 && forgeLike {
     @SubscribeEvent
@@ -152,6 +153,7 @@ public class MiniGameTests {
         MiniEntity mini = helper.spawn(ModEntities.MINI_ENTITY.get(), SPAWN);
         mini.setOwnerId(OWNER);
         mini.setMode(MiniMode.FOLLOW);
+        mini.setSkin(SKIN);
         mini.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.DIAMOND_HELMET));
         mini.getInventory().setItem(3, new ItemStack(Items.DIAMOND, 5));
 
@@ -168,6 +170,7 @@ public class MiniGameTests {
 
         check(helper, OWNER.equals(loaded.getOwnerId()), "Expected owner " + OWNER + " after loading but got " + loaded.getOwnerId());
         check(helper, loaded.getMode() == MiniMode.FOLLOW, "Expected the follow mode after loading but got " + loaded.getMode());
+        check(helper, SKIN.equals(loaded.getSkinId()), "Expected the skin of " + SKIN + " after loading but got " + loaded.getSkinId());
         check(helper, loaded.getItemBySlot(EquipmentSlot.HEAD).is(Items.DIAMOND_HELMET), "The Mini lost its helmet when saved");
         check(helper, loaded.getInventory().getItem(3).is(Items.DIAMOND) && loaded.getInventory().getItem(3).getCount() == 5, "The Mini lost its inventory when saved");
         helper.succeed();

@@ -41,8 +41,12 @@ public class MiniScreen extends AbstractContainerScreen<MiniMenu> {
 	private static final float MODEL_OFFSET = 0.5125F;
 
 	private final List<Button> modeButtons = new ArrayList<>();
+	private String name;
+	private boolean editing;
+	private boolean focusNameBox;
 	private EditBox nameBox;
-	private String sentName;
+	private Button editButton;
+	private Button confirmButton;
 
 	public MiniScreen(MiniMenu menu, Inventory playerInventory, Component title) {
 		//? if >=26.1 {
@@ -52,19 +56,27 @@ public class MiniScreen extends AbstractContainerScreen<MiniMenu> {
 		this.imageWidth = 176;
 		this.imageHeight = 216;
 		*///?}
-		// The name box takes the title's place
+		// The name row draws the title itself
 		this.titleLabelY = -1000;
 		this.inventoryLabelY = 123;
+		this.name = title.getString();
 	}
 
 	@Override
 	protected void init() {
 		super.init();
-		this.sentName = this.nameBox == null ? this.title.getString() : this.nameBox.getValue();
-		this.nameBox = new EditBox(this.font, this.leftPos + 8, this.topPos + 5, 160, 12, Component.translatable("minis.name"));
+		this.nameBox = new EditBox(this.font, this.leftPos + 8, this.topPos + 5, 144, 12, Component.translatable("minis.name"));
 		this.nameBox.setMaxLength(MiniCommand.MAX_NAME_LENGTH);
-		this.nameBox.setValue(this.sentName);
+		this.nameBox.setValue(this.name);
 		this.addRenderableWidget(this.nameBox);
+
+		this.editButton = this.addRenderableWidget(Button.builder(Component.literal("\u270E"), pressed -> this.setEditing(true))
+				.bounds(this.leftPos + 156, this.topPos + 4, 14, 14)
+				.build());
+		this.confirmButton = this.addRenderableWidget(Button.builder(Component.literal("\u2714"), pressed -> this.confirmName())
+				.bounds(this.leftPos + 156, this.topPos + 4, 14, 14)
+				.build());
+		this.setEditing(this.editing);
 
 		this.modeButtons.clear();
 		for (MiniMode mode : MiniMode.values()) {
@@ -75,54 +87,91 @@ public class MiniScreen extends AbstractContainerScreen<MiniMenu> {
 		}
 	}
 
-	private void sendName() {
-		String name = this.nameBox.getValue().trim();
-		if (!name.equals(this.sentName)) {
-			this.sentName = name;
-			this.minecraft.player.connection.sendCommand(name.isEmpty() ? "minis name" : "minis name " + name);
+	private void setEditing(boolean editing) {
+		this.editing = editing;
+		this.nameBox.setVisible(editing);
+		this.editButton.visible = !editing;
+		this.confirmButton.visible = editing;
+		if (editing) {
+			this.nameBox.setValue(this.name);
+			// The screen focuses the clicked button after this runs, so the box takes focus on the next tick
+			this.focusNameBox = true;
+		} else {
+			this.nameBox.setFocused(false);
 		}
 	}
 
-	// Sent before the screen closes, while the server still has the Mini's menu open
-	@Override
-	public void onClose() {
-		this.sendName();
-		super.onClose();
+	// An empty name goes back to the owner's name and skin
+	private void confirmName() {
+		String name = this.nameBox.getValue().trim();
+		if (!name.equals(this.name)) {
+			this.minecraft.player.connection.sendCommand(name.isEmpty() ? "minis name" : "minis name " + name);
+			this.name = name;
+		}
+		this.setEditing(false);
 	}
 
-	// While typing a name, keys go to the box instead of closing the screen. Enter saves it.
+	// While editing, keys go to the name box instead of closing the screen. Enter saves and Escape cancels.
 	//? if >=1.21.9 {
 	@Override
 	public boolean keyPressed(KeyEvent event) {
-		int key = event.key();
-		if (this.nameBox.isFocused() && key != 256) {
-			if (key == 257 || key == 335) {
-				this.sendName();
-				this.nameBox.setFocused(false);
-				return true;
-			}
-			return this.nameBox.keyPressed(event) || this.nameBox.canConsumeInput();
+		if (this.editing) {
+			return this.handleEditingKey(event.key()) || this.nameBox.keyPressed(event) || this.nameBox.canConsumeInput();
 		}
 		return super.keyPressed(event);
 	}
 	//?} else {
 	/*@Override
 	public boolean keyPressed(int key, int scanCode, int modifiers) {
-		if (this.nameBox.isFocused() && key != 256) {
-			if (key == 257 || key == 335) {
-				this.sendName();
-				this.nameBox.setFocused(false);
-				return true;
-			}
-			return this.nameBox.keyPressed(key, scanCode, modifiers) || this.nameBox.canConsumeInput();
+		if (this.editing) {
+			return this.handleEditingKey(key) || this.nameBox.keyPressed(key, scanCode, modifiers) || this.nameBox.canConsumeInput();
 		}
 		return super.keyPressed(key, scanCode, modifiers);
+	}
+	*///?}
+
+	private boolean handleEditingKey(int key) {
+		if (key == 257 || key == 335) {
+			this.confirmName();
+			return true;
+		}
+		if (key == 256) {
+			this.setEditing(false);
+			return true;
+		}
+		return false;
+	}
+
+	private String shownName() {
+		return this.font.plainSubstrByWidth(this.name, 144);
+	}
+
+	//? if >=26.1 {
+	@Override
+	protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+		super.extractLabels(graphics, mouseX, mouseY);
+		if (!this.editing) {
+			graphics.text(this.font, this.shownName(), 8, 7, 0xFF404040, false);
+		}
+	}
+	//?} else {
+	/*@Override
+	protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
+		super.renderLabels(graphics, mouseX, mouseY);
+		if (!this.editing) {
+			graphics.drawString(this.font, this.shownName(), 8, 7, 0xFF404040, false);
+		}
 	}
 	*///?}
 
 	@Override
 	protected void containerTick() {
 		super.containerTick();
+		if (this.focusNameBox) {
+			this.focusNameBox = false;
+			this.setFocused(this.nameBox);
+			this.nameBox.setFocused(true);
+		}
 		MiniMode current = this.menu.getMode();
 		for (MiniMode mode : MiniMode.values()) {
 			this.modeButtons.get(mode.ordinal()).active = mode != current;

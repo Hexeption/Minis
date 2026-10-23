@@ -21,7 +21,7 @@ import net.minecraft.world.entity.EntitySpawnReason;
  * MiniCommand
  *
  * /minis spawn [owner] spawns a Mini of the owner (you by default) where you're standing.
- * /minis name [name] renames the Mini whose screen you have open.
+ * /minis name [name] renames the Mini whose screen you have open, and it takes that player's skin.
  *
  * @author Hexeption admin@hexeption.co.uk
  * @since 23/10/2026
@@ -60,9 +60,12 @@ public final class MiniCommand {
         String trimmed = name.trim();
         if (trimmed.isEmpty()) {
             mini.setCustomName(null);
+            mini.setSkin(null);
             mini.nameAfterOwner();
         } else {
-            mini.setCustomName(Component.literal(trimmed.length() > MAX_NAME_LENGTH ? trimmed.substring(0, MAX_NAME_LENGTH) : trimmed));
+            String newName = trimmed.length() > MAX_NAME_LENGTH ? trimmed.substring(0, MAX_NAME_LENGTH) : trimmed;
+            mini.setCustomName(Component.literal(newName));
+            mini.useSkinOf(newName);
         }
         return 1;
     }

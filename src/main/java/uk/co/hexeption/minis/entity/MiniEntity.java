@@ -50,6 +50,8 @@ public class MiniEntity extends PathfinderMob {
 	// The owner's UUID as a string, "" when it has none
 	protected static final EntityDataAccessor<String> OWNER = SynchedEntityData.defineId(MiniEntity.class, EntityDataSerializers.STRING);
 	protected static final EntityDataAccessor<Integer> MODE = SynchedEntityData.defineId(MiniEntity.class, EntityDataSerializers.INT);
+	// Whose skin the Mini wears, "" for its owner's
+	protected static final EntityDataAccessor<String> SKIN = SynchedEntityData.defineId(MiniEntity.class, EntityDataSerializers.STRING);
 
 	public static final int INVENTORY_SIZE = 9;
 	public static final EquipmentSlot[] EQUIPMENT_SLOTS = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET, EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND};
@@ -99,6 +101,7 @@ public class MiniEntity extends PathfinderMob {
 		super.defineSynchedData(builder);
 		builder.define(OWNER, "");
 		builder.define(MODE, MiniMode.WANDER.ordinal());
+		builder.define(SKIN, "");
 	}
 	//?} else {
 	/*@Override
@@ -106,6 +109,7 @@ public class MiniEntity extends PathfinderMob {
 		super.defineSynchedData();
 		this.entityData.define(OWNER, "");
 		this.entityData.define(MODE, MiniMode.WANDER.ordinal());
+		this.entityData.define(SKIN, "");
 	}
 	*///?}
 
@@ -115,6 +119,7 @@ public class MiniEntity extends PathfinderMob {
 		super.addAdditionalSaveData(output);
 		output.storeNullable("Owner", UUIDUtil.CODEC, this.getOwnerId());
 		output.putString("Mode", this.getMode().name());
+		output.storeNullable("Skin", UUIDUtil.CODEC, this.getSkinOverride());
 		ContainerHelper.saveAllItems(output, this.inventoryItems());
 	}
 
@@ -123,6 +128,7 @@ public class MiniEntity extends PathfinderMob {
 		super.readAdditionalSaveData(input);
 		input.read("Owner", UUIDUtil.CODEC).ifPresent(this::setOwnerId);
 		this.setMode(MiniMode.byName(input.getStringOr("Mode", MiniMode.WANDER.name())));
+		this.setSkin(input.read("Skin", UUIDUtil.CODEC).orElse(null));
 		NonNullList<ItemStack> items = NonNullList.withSize(INVENTORY_SIZE, ItemStack.EMPTY);
 		ContainerHelper.loadAllItems(input, items);
 		this.setInventoryItems(items);
@@ -135,6 +141,9 @@ public class MiniEntity extends PathfinderMob {
 			compound.putUUID("Owner", this.getOwnerId());
 		}
 		compound.putString("Mode", this.getMode().name());
+		if (this.getSkinOverride() != null) {
+			compound.putUUID("Skin", this.getSkinOverride());
+		}
 		//? if >=1.20.5 {
 		ContainerHelper.saveAllItems(compound, this.inventoryItems(), this.registryAccess());
 		//?} else
@@ -148,6 +157,7 @@ public class MiniEntity extends PathfinderMob {
 			this.setOwnerId(compound.getUUID("Owner"));
 		}
 		this.setMode(MiniMode.byName(compound.getString("Mode")));
+		this.setSkin(compound.hasUUID("Skin") ? compound.getUUID("Skin") : null);
 		NonNullList<ItemStack> items = NonNullList.withSize(INVENTORY_SIZE, ItemStack.EMPTY);
 		//? if >=1.20.5 {
 		ContainerHelper.loadAllItems(compound, items, this.registryAccess());
@@ -191,6 +201,30 @@ public class MiniEntity extends PathfinderMob {
 
 	public boolean isOwnedBy(Player player) {
 		return player.getUUID().equals(this.getOwnerId());
+	}
+
+	// The player whose skin the Mini wears
+	@Nullable
+	public UUID getSkinId() {
+		UUID skin = this.getSkinOverride();
+		return skin != null ? skin : this.getOwnerId();
+	}
+
+	@Nullable
+	private UUID getSkinOverride() {
+		String skin = this.entityData.get(SKIN);
+		return skin.isEmpty() ? null : UUID.fromString(skin);
+	}
+
+	public void setSkin(@Nullable UUID skin) {
+		this.entityData.set(SKIN, skin == null ? "" : skin.toString());
+	}
+
+	// Wears the skin of the player with this name, or the owner's if there's no such player
+	public void useSkinOf(String name) {
+		if (this.level() instanceof ServerLevel serverLevel) {
+			MiniProfiles.idOf(name).thenAccept(id -> serverLevel.getServer().execute(() -> this.setSkin(id.orElse(null))));
+		}
 	}
 
 	public MiniMode getMode() {

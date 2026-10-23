@@ -46,11 +46,11 @@ public final class MiniSkins {
     private MiniSkins() {
     }
 
-    // A Mini without an owner looks like whoever is looking at it
+    // A Mini without an owner or skin looks like whoever is looking at it
     public static UUID owner(MiniEntity mini) {
-        UUID owner = mini.getOwnerId();
-        if (owner != null) {
-            return owner;
+        UUID skin = mini.getSkinId();
+        if (skin != null) {
+            return skin;
         }
 
         LocalPlayer player = Minecraft.getInstance().player;
