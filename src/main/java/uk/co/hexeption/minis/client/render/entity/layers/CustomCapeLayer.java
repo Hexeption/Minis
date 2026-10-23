@@ -1,4 +1,5 @@
-package uk.co.hexeption.minis.client.render.entity.layers;
+//? if <1.21.2 {
+/*package uk.co.hexeption.minis.client.render.entity.layers;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -9,16 +10,14 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.resources.PlayerSkin;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
-import org.spongepowered.asm.mixin.Mixin;
-import uk.co.hexeption.minis.Minis;
+import uk.co.hexeption.minis.client.MiniSkins;
 import uk.co.hexeption.minis.entity.MiniEntity;
 
 public class CustomCapeLayer extends RenderLayer<MiniEntity, PlayerModel<MiniEntity>> {
 
-    public CustomCapeLayer(RenderLayerParent pRenderer) {
+    public CustomCapeLayer(RenderLayerParent<MiniEntity, PlayerModel<MiniEntity>> pRenderer) {
 
         super(pRenderer);
     }
@@ -26,9 +25,11 @@ public class CustomCapeLayer extends RenderLayer<MiniEntity, PlayerModel<MiniEnt
     @Override
     public void render(PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight, MiniEntity pLivingEntity, float pLimbSwing, float pLimbSwingAmount, float pPartialTick, float pAgeInTicks, float pNetHeadYaw, float pHeadPitch) {
 
-
-        PlayerSkin playerSkin =  pLivingEntity.getSkin();
-        if (playerSkin.capeTexture() != null) {
+        //? if >=1.20.2 {
+        Identifier capeTexture = MiniSkins.skin(pLivingEntity).capeTexture();
+        //?} else
+        /^Identifier capeTexture = MiniSkins.cape(pLivingEntity);^/
+        if (capeTexture != null) {
             pPoseStack.pushPose();
             pPoseStack.translate(0.0F, 0.0F, 0.125F);
             double d0 = Mth.lerp((double)pPartialTick, pLivingEntity.xCloakO, pLivingEntity.xCloak) - Mth.lerp((double)pPartialTick, pLivingEntity.xo, pLivingEntity.getX());
@@ -47,8 +48,6 @@ public class CustomCapeLayer extends RenderLayer<MiniEntity, PlayerModel<MiniEnt
                 f2 = 0.0F;
             }
 
-            float f4 = Mth.lerp(pPartialTick, pLivingEntity.oBob, pLivingEntity.bob);
-            f1 += Mth.sin(Mth.lerp(pPartialTick, pLivingEntity.walkDistO, pLivingEntity.walkDist) * 6.0F) * 32.0F * f4;
             if (pLivingEntity.isCrouching()) {
                 f1 += 25.0F;
             }
@@ -56,7 +55,7 @@ public class CustomCapeLayer extends RenderLayer<MiniEntity, PlayerModel<MiniEnt
             pPoseStack.mulPose(Axis.XP.rotationDegrees(6.0F + f2 / 2.0F + f1));
             pPoseStack.mulPose(Axis.ZP.rotationDegrees(f3 / 2.0F));
             pPoseStack.mulPose(Axis.YP.rotationDegrees(180.0F - f3 / 2.0F));
-            VertexConsumer vertexconsumer = pBuffer.getBuffer(RenderType.entitySolid(playerSkin.capeTexture()));
+            VertexConsumer vertexconsumer = pBuffer.getBuffer(RenderType.entitySolid(capeTexture));
             this.getParentModel().renderCloak(pPoseStack, vertexconsumer, pPackedLight, OverlayTexture.NO_OVERLAY);
             pPoseStack.popPose();
         }
@@ -64,3 +63,4 @@ public class CustomCapeLayer extends RenderLayer<MiniEntity, PlayerModel<MiniEnt
     }
 
 }
+*///?}
