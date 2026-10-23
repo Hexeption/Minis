@@ -7,7 +7,12 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+//? if >=1.21.6
+import net.minecraft.client.renderer.RenderPipelines;
+//? if >=1.21.2 && <1.21.6
+/*import net.minecraft.client.renderer.RenderType;*/
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
@@ -40,6 +45,9 @@ public class MiniScreen extends AbstractContainerScreen<MiniMenu> {
 	private static final int SLOT_SHADOW = 0xFF373737;
 	// The preview centres on the Mini's half-size hitbox, so a full-size model is moved up by the missing half
 	private static final float MODEL_OFFSET = 0.5125F;
+
+	//? if <1.20.2
+	/*private static final Identifier ICONS = new Identifier("textures/gui/icons.png");*/
 
 	private final List<Button> modeButtons = new ArrayList<>();
 	private String name;
@@ -143,10 +151,26 @@ public class MiniScreen extends AbstractContainerScreen<MiniMenu> {
 		return false;
 	}
 
-	private static final String HEART = "\u2764";
+	// Vanilla's heart sprites, and where the same hearts sit on 1.20.1's icons sheet
+	private enum Heart {
+		CONTAINER("hud/heart/container", 16),
+		FULL("hud/heart/full", 52),
+		HALF("hud/heart/half", 61);
+
+		final Identifier sprite;
+		final int iconsU;
+
+		Heart(String sprite, int iconsU) {
+			//? if >=1.21 {
+			this.sprite = Identifier.withDefaultNamespace(sprite);
+			//?} else
+			/*this.sprite = new Identifier(sprite);*/
+			this.iconsU = iconsU;
+		}
+	}
 
 	// One heart per two points of max health, eight to a row
-	private void drawHearts(TextDrawer text) {
+	private void drawHearts(HeartDrawer drawer) {
 		LivingEntity mini = this.mini();
 		if (mini == null) {
 			return;
@@ -155,15 +179,21 @@ public class MiniScreen extends AbstractContainerScreen<MiniMenu> {
 		int hearts = Mth.ceil(mini.getMaxHealth() / 2.0F);
 		float health = mini.getHealth();
 		for (int i = 0; i < hearts; i++) {
+			int x = 98 + (i % 8) * 9;
+			int y = 86 + (i / 8) * 9;
+			drawer.draw(Heart.CONTAINER, x, y);
 			float left = health - i * 2;
-			int color = left >= 2 ? 0xFFE03030 : left >= 1 ? 0xFFF08080 : 0xFF555555;
-			text.draw(HEART, 98 + (i % 8) * 9, 86 + (i / 8) * 9, color);
+			if (left >= 2) {
+				drawer.draw(Heart.FULL, x, y);
+			} else if (left >= 1) {
+				drawer.draw(Heart.HALF, x, y);
+			}
 		}
 	}
 
 	@FunctionalInterface
-	private interface TextDrawer {
-		void draw(String text, int x, int y, int color);
+	private interface HeartDrawer {
+		void draw(Heart heart, int x, int y);
 	}
 
 	private String shownName() {
@@ -177,7 +207,7 @@ public class MiniScreen extends AbstractContainerScreen<MiniMenu> {
 		if (!this.editing) {
 			graphics.text(this.font, this.shownName(), 8, 7, 0xFF404040, false);
 		}
-		this.drawHearts((text, x, y, color) -> graphics.text(this.font, text, x, y, color, false));
+		this.drawHearts((heart, x, y) -> graphics.blitSprite(RenderPipelines.GUI_TEXTURED, heart.sprite, x, y, 9, 9));
 	}
 	//?} else {
 	/*@Override
@@ -186,7 +216,16 @@ public class MiniScreen extends AbstractContainerScreen<MiniMenu> {
 		if (!this.editing) {
 			graphics.drawString(this.font, this.shownName(), 8, 7, 0xFF404040, false);
 		}
-		this.drawHearts((text, x, y, color) -> graphics.drawString(this.font, text, x, y, color, false));
+		this.drawHearts((heart, x, y) -> {
+			//? if >=1.21.6 {
+			graphics.blitSprite(RenderPipelines.GUI_TEXTURED, heart.sprite, x, y, 9, 9);
+			//?} else if >=1.21.2 {
+			/^graphics.blitSprite(RenderType::guiTextured, heart.sprite, x, y, 9, 9);
+			^///?} else if >=1.20.2 {
+			/^graphics.blitSprite(heart.sprite, x, y, 9, 9);
+			^///?} else
+			/^graphics.blit(ICONS, x, y, heart.iconsU, 0, 9, 9);^/
+		});
 	}
 	*///?}
 
