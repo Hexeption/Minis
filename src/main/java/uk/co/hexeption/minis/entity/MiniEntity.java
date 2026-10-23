@@ -11,6 +11,8 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import uk.co.hexeption.minis.item.MiniItem;
 import uk.co.hexeption.minis.menu.MiniMenu;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -33,11 +35,12 @@ import uk.co.hexeption.minis.util.MiniProfiles;
 
 //? if >=1.21.6 {
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-//?} else {
-/*import net.minecraft.nbt.CompoundTag;
-*///?}
+//?}
 
 /**
  * MiniEntity
@@ -242,6 +245,27 @@ public class MiniEntity extends PathfinderMob {
 		return this.getMode() == MiniMode.SIT;
 	}
 
+	// Everything about the Mini except where it is, for storing in a MiniItem
+	public CompoundTag saveForItem() {
+		//? if >=1.21.6 {
+		TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, this.registryAccess());
+		this.saveWithoutId(output);
+		CompoundTag tag = output.buildResult();
+		//?} else
+		/*CompoundTag tag = this.saveWithoutId(new CompoundTag());*/
+		tag.remove("UUID");
+		tag.remove("Pos");
+		tag.remove("Motion");
+		return tag;
+	}
+
+	public void loadFromItem(CompoundTag tag) {
+		//? if >=1.21.6 {
+		this.load(TagValueInput.create(ProblemReporter.DISCARDING, this.registryAccess(), tag));
+		//?} else
+		/*this.load(tag);*/
+	}
+
 	public SimpleContainer getInventory() {
 		return this.inventory;
 	}
@@ -261,7 +285,8 @@ public class MiniEntity extends PathfinderMob {
 		}
 	}
 
-	// Right click opens the Mini's screen for its owner. A Mini without an owner belongs to whoever clicks it first
+	// Right click opens the Mini's screen for its owner, and sneaking picks it up.
+	// A Mini without an owner belongs to whoever clicks it first.
 	@Override
 	protected InteractionResult mobInteract(Player player, InteractionHand hand) {
 		if (this.getOwnerId() != null && !this.isOwnedBy(player)) {
@@ -271,6 +296,14 @@ public class MiniEntity extends PathfinderMob {
 		if (!this.level().isClientSide()) {
 			if (this.getOwnerId() == null) {
 				this.setOwnerId(player.getUUID());
+			}
+			if (player.isShiftKeyDown()) {
+				ItemStack stack = MiniItem.of(this);
+				if (!player.getInventory().add(stack)) {
+					Containers.dropItemStack(this.level(), player.getX(), player.getY(), player.getZ(), stack);
+				}
+				this.discard();
+				return InteractionResult.SUCCESS;
 			}
 			player.openMenu(new SimpleMenuProvider((containerId, playerInventory, opener) -> new MiniMenu(containerId, playerInventory, this), this.getDisplayName()));
 		}

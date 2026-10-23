@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.co.hexeption.minis.command.MiniCommand;
 import uk.co.hexeption.minis.init.ModEntities;
+import uk.co.hexeption.minis.init.ModItems;
 import uk.co.hexeption.minis.init.ModMenus;
 
 //? if neoforge {
@@ -43,6 +44,7 @@ public class Minis {
     public Minis(IEventBus modEventBus) {
         ModEntities.register(modEventBus);
         ModMenus.register(modEventBus);
+        ModItems.register(modEventBus);
         NeoForge.EVENT_BUS.addListener((RegisterCommandsEvent event) -> MiniCommand.register(event.getDispatcher()));
     }
     //?}
@@ -50,6 +52,7 @@ public class Minis {
     /*public Minis(FMLJavaModLoadingContext context) {
         ModEntities.register(context.getModBusGroup());
         ModMenus.register(context.getModBusGroup());
+        ModItems.register(context.getModBusGroup());
         RegisterCommandsEvent.BUS.addListener(event -> MiniCommand.register(event.getDispatcher()));
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
@@ -60,6 +63,7 @@ public class Minis {
     /*public Minis() {
         ModEntities.register(FMLJavaModLoadingContext.get().getModEventBus());
         ModMenus.register(FMLJavaModLoadingContext.get().getModEventBus());
+        ModItems.register(FMLJavaModLoadingContext.get().getModEventBus());
         MinecraftForge.EVENT_BUS.addListener((RegisterCommandsEvent event) -> MiniCommand.register(event.getDispatcher()));
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
@@ -72,6 +76,7 @@ public class Minis {
     public void onInitialize() {
         ModEntities.register();
         ModMenus.register();
+        ModItems.register();
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> MiniCommand.register(dispatcher));
     }
     *///?}

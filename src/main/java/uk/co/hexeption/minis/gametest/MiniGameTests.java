@@ -3,11 +3,13 @@ package uk.co.hexeption.minis.gametest;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import uk.co.hexeption.minis.Minis;
 import net.minecraft.world.level.block.Blocks;
 import uk.co.hexeption.minis.entity.MiniEntity;
 import uk.co.hexeption.minis.entity.MiniMode;
+import uk.co.hexeption.minis.item.MiniItem;
 import uk.co.hexeption.minis.menu.MiniMenu;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
@@ -28,7 +30,6 @@ import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.entity.EntitySpawnReason;
 //? if >=1.21.5 {
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.chat.Component;
 //?} else {
 /*import net.minecraft.gametest.framework.GameTest;
 *///?}
@@ -82,6 +83,7 @@ public class MiniGameTests {
             registry.register(Minis.id("mini_keeps_owner_when_saved"), MiniGameTests::miniKeepsOwnerWhenSaved);
             registry.register(Minis.id("sitting_mini_stays_put"), MiniGameTests::sittingMiniStaysPut);
             registry.register(Minis.id("mode_buttons_change_the_mode"), MiniGameTests::modeButtonsChangeTheMode);
+            registry.register(Minis.id("picked_up_mini_comes_back_the_same"), MiniGameTests::pickedUpMiniComesBackTheSame);
         });
     }
     //?} else if >=1.21.5 {
@@ -91,6 +93,7 @@ public class MiniGameTests {
         Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("mini_keeps_owner_when_saved"), MiniGameTests::miniKeepsOwnerWhenSaved);
         Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("sitting_mini_stays_put"), MiniGameTests::sittingMiniStaysPut);
         Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("mode_buttons_change_the_mode"), MiniGameTests::modeButtonsChangeTheMode);
+        Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("picked_up_mini_comes_back_the_same"), MiniGameTests::pickedUpMiniComesBackTheSame);
     }
     *///?} else {
     /*//? if fabric {
@@ -124,6 +127,11 @@ public class MiniGameTests {
     @GameTest(template = TEMPLATE)
     public void modeButtonsChangeTheModeTest(GameTestHelper helper) {
         modeButtonsChangeTheMode(helper);
+    }
+
+    @GameTest(template = TEMPLATE)
+    public void pickedUpMiniComesBackTheSameTest(GameTestHelper helper) {
+        pickedUpMiniComesBackTheSame(helper);
     }
     *///?}
 
@@ -202,6 +210,32 @@ public class MiniGameTests {
         menu.clickMenuButton(player, MiniMode.SIT.ordinal());
 
         check(helper, mini.getMode() == MiniMode.SIT && menu.getMode() == MiniMode.SIT, "The sit button left the Mini in " + mini.getMode());
+        helper.succeed();
+    }
+
+    public static void pickedUpMiniComesBackTheSame(GameTestHelper helper) {
+        MiniEntity mini = helper.spawn(ModEntities.MINI_ENTITY.get(), SPAWN);
+        mini.setOwnerId(OWNER);
+        mini.setMode(MiniMode.SIT);
+        mini.setSkin(SKIN);
+        mini.setCustomName(Component.literal("Buddy"));
+        mini.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+        mini.getInventory().setItem(8, new ItemStack(Items.EMERALD, 3));
+
+        ItemStack item = MiniItem.of(mini);
+        mini.discard();
+        check(helper, Component.translatable("item.minis.mini.named", "Buddy").equals(item.getHoverName()), "The item is called " + item.getHoverName());
+
+        //? if >=1.21.2 {
+        MiniEntity placed = ModEntities.MINI_ENTITY.get().create(helper.getLevel(), EntitySpawnReason.LOAD);
+        //?} else
+        /*MiniEntity placed = ModEntities.MINI_ENTITY.get().create(helper.getLevel());*/
+        placed.loadFromItem(MiniItem.data(item));
+
+        check(helper, OWNER.equals(placed.getOwnerId()) && SKIN.equals(placed.getSkinId()), "The placed Mini lost its owner or skin");
+        check(helper, placed.getMode() == MiniMode.SIT, "The placed Mini lost its mode");
+        check(helper, placed.getItemBySlot(EquipmentSlot.CHEST).is(Items.IRON_CHESTPLATE), "The placed Mini lost its armor");
+        check(helper, placed.getInventory().getItem(8).is(Items.EMERALD), "The placed Mini lost its inventory");
         helper.succeed();
     }
 
