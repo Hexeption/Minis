@@ -1,9 +1,0 @@
-{
-  "model": {
-    "type": "minecraft:special",
-    "base": "minis:item/mini",
-    "model": {
-      "type": "minis:mini"
-    }
-  }
-}

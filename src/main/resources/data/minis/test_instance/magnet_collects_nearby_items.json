@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minis:magnet_collects_nearby_items",
+  "max_ticks": 100,
+  "required": true,
+  "setup_ticks": 1,
+  "structure": "minis:minigametests.empty"
+}

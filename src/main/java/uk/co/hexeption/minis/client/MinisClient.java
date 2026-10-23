@@ -1,6 +1,7 @@
 package uk.co.hexeption.minis.client;
 
 import uk.co.hexeption.minis.client.render.entity.MiniRenderer;
+import uk.co.hexeption.minis.client.screen.MiniNameScreen;
 import uk.co.hexeption.minis.client.screen.MiniScreen;
 import uk.co.hexeption.minis.client.item.MiniItemRenderer;
 import uk.co.hexeption.minis.init.ModEntities;
@@ -71,6 +72,7 @@ import net.minecraft.client.gui.screens.MenuScreens;
     public void onInitializeClient() {
         EntityRendererRegistry.register(ModEntities.MINI_ENTITY.get(), MiniRenderer::new);
         MenuScreens.register(ModMenus.MINI.get(), MiniScreen::new);
+        MenuScreens.register(ModMenus.MINI_NAME.get(), MiniNameScreen::new);
         //? if >=1.21.4 {
         SpecialModelRenderersAccessor.minis$idMapper().put(Minis.id("mini"), MiniSpecialRenderer.Unbaked.CODEC);
         //?} else
@@ -121,12 +123,16 @@ public class MinisClient {
     @SubscribeEvent
     public static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenus.MINI.get(), MiniScreen::new);
+        event.register(ModMenus.MINI_NAME.get(), MiniNameScreen::new);
     }
     //?} else if forgeLike {
     /*//? if neoforge
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
-        event.enqueueWork(() -> MenuScreens.register(ModMenus.MINI.get(), MiniScreen::new));
+        event.enqueueWork(() -> {
+            MenuScreens.register(ModMenus.MINI.get(), MiniScreen::new);
+            MenuScreens.register(ModMenus.MINI_NAME.get(), MiniNameScreen::new);
+        });
     }
     *///?}
 

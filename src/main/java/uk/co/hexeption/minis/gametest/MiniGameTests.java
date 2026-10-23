@@ -8,6 +8,9 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import uk.co.hexeption.minis.Minis;
 import net.minecraft.world.level.block.Blocks;
 import uk.co.hexeption.minis.entity.MiniEntity;
+import uk.co.hexeption.minis.entity.MiniUpgrade;
+import uk.co.hexeption.minis.init.ModItems;
+import net.minecraft.world.entity.item.ItemEntity;
 import uk.co.hexeption.minis.entity.MiniMode;
 import uk.co.hexeption.minis.item.MiniItem;
 import uk.co.hexeption.minis.menu.MiniMenu;
@@ -85,6 +88,10 @@ public class MiniGameTests {
             registry.register(Minis.id("mode_buttons_change_the_mode"), MiniGameTests::modeButtonsChangeTheMode);
             registry.register(Minis.id("picked_up_mini_comes_back_the_same"), MiniGameTests::pickedUpMiniComesBackTheSame);
             registry.register(Minis.id("food_heals_a_hurt_mini"), MiniGameTests::foodHealsAHurtMini);
+            registry.register(Minis.id("upgrades_change_speed_and_health"), MiniGameTests::upgradesChangeSpeedAndHealth);
+            registry.register(Minis.id("magnet_collects_nearby_items"), MiniGameTests::magnetCollectsNearbyItems);
+            registry.register(Minis.id("upgrade_slots_take_one_of_each"), MiniGameTests::upgradeSlotsTakeOneOfEach);
+            registry.register(Minis.id("combat_upgrade_lets_a_mini_fight"), MiniGameTests::combatUpgradeLetsAMiniFight);
         });
     }
     //?} else if >=1.21.5 {
@@ -96,6 +103,10 @@ public class MiniGameTests {
         Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("mode_buttons_change_the_mode"), MiniGameTests::modeButtonsChangeTheMode);
         Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("picked_up_mini_comes_back_the_same"), MiniGameTests::pickedUpMiniComesBackTheSame);
         Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("food_heals_a_hurt_mini"), MiniGameTests::foodHealsAHurtMini);
+        Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("upgrades_change_speed_and_health"), MiniGameTests::upgradesChangeSpeedAndHealth);
+        Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("magnet_collects_nearby_items"), MiniGameTests::magnetCollectsNearbyItems);
+        Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("upgrade_slots_take_one_of_each"), MiniGameTests::upgradeSlotsTakeOneOfEach);
+        Registry.register(BuiltInRegistries.TEST_FUNCTION, Minis.id("combat_upgrade_lets_a_mini_fight"), MiniGameTests::combatUpgradeLetsAMiniFight);
     }
     *///?} else {
     /*//? if fabric {
@@ -139,6 +150,26 @@ public class MiniGameTests {
     @GameTest(template = TEMPLATE)
     public void foodHealsAHurtMiniTest(GameTestHelper helper) {
         foodHealsAHurtMini(helper);
+    }
+
+    @GameTest(template = TEMPLATE)
+    public void upgradesChangeSpeedAndHealthTest(GameTestHelper helper) {
+        upgradesChangeSpeedAndHealth(helper);
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public void magnetCollectsNearbyItemsTest(GameTestHelper helper) {
+        magnetCollectsNearbyItems(helper);
+    }
+
+    @GameTest(template = TEMPLATE)
+    public void upgradeSlotsTakeOneOfEachTest(GameTestHelper helper) {
+        upgradeSlotsTakeOneOfEach(helper);
+    }
+
+    @GameTest(template = TEMPLATE)
+    public void combatUpgradeLetsAMiniFightTest(GameTestHelper helper) {
+        combatUpgradeLetsAMiniFight(helper);
     }
     *///?}
 
@@ -256,6 +287,70 @@ public class MiniGameTests {
 
         mini.setHealth(mini.getMaxHealth());
         check(helper, !mini.feed(new ItemStack(Items.BREAD)), "A Mini at full health still ate");
+        helper.succeed();
+    }
+
+    public static void upgradesChangeSpeedAndHealth(GameTestHelper helper) {
+        MiniEntity mini = helper.spawn(ModEntities.MINI_ENTITY.get(), SPAWN);
+        mini.getUpgrades().setItem(0, new ItemStack(ModItems.upgrade(MiniUpgrade.SPEED)));
+        mini.getUpgrades().setItem(1, new ItemStack(ModItems.upgrade(MiniUpgrade.HEALTH)));
+        mini.setHealth(mini.getMaxHealth());
+
+        check(helper, Math.abs(mini.getAttributeValue(Attributes.MOVEMENT_SPEED) - 0.45D) < 1.0E-6D, "Expected a movement speed of 0.45 but got " + mini.getAttributeValue(Attributes.MOVEMENT_SPEED));
+        check(helper, mini.getMaxHealth() == 20.0F && mini.getHealth() == 20.0F, "Expected 20 health but got " + mini.getHealth() + "/" + mini.getMaxHealth());
+
+        //? if >=1.21.2 {
+        MiniEntity loaded = ModEntities.MINI_ENTITY.get().create(helper.getLevel(), EntitySpawnReason.LOAD);
+        //?} else
+        /*MiniEntity loaded = ModEntities.MINI_ENTITY.get().create(helper.getLevel());*/
+        loaded.loadFromItem(mini.saveForItem());
+        check(helper, loaded.hasUpgrade(MiniUpgrade.HEALTH) && loaded.getHealth() == 20.0F, "The Mini lost its upgrade or health when saved, it's on " + loaded.getHealth());
+
+        mini.getUpgrades().setItem(1, ItemStack.EMPTY);
+        check(helper, mini.getMaxHealth() == 10.0F && mini.getHealth() == 10.0F, "Taking the health upgrade out left " + mini.getHealth() + "/" + mini.getMaxHealth());
+        helper.succeed();
+    }
+
+    public static void magnetCollectsNearbyItems(GameTestHelper helper) {
+        floor(helper);
+        MiniEntity mini = helper.spawn(ModEntities.MINI_ENTITY.get(), SPAWN);
+        mini.setMode(MiniMode.SIT);
+        mini.getUpgrades().setItem(0, new ItemStack(ModItems.upgrade(MiniUpgrade.MAGNET)));
+        // Two blocks away, so it has to be pulled in, and still inside the test's walls
+        BlockPos drop = helper.absolutePos(new BlockPos(1, 1, 3));
+        ItemEntity item = new ItemEntity(helper.getLevel(), drop.getX() + 0.5D, drop.getY(), drop.getZ() + 0.5D, new ItemStack(Items.DIAMOND, 2));
+        item.setNoPickUpDelay();
+        helper.getLevel().addFreshEntity(item);
+
+        helper.succeedWhen(() -> check(helper, mini.getInventory().countItem(Items.DIAMOND) == 2, "The magnet hasn't picked up the diamonds"));
+    }
+
+    public static void upgradeSlotsTakeOneOfEach(GameTestHelper helper) {
+        MiniEntity mini = helper.spawn(ModEntities.MINI_ENTITY.get(), SPAWN);
+        //? if >=1.20.5 {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        //?} else
+        /*Player player = helper.makeMockPlayer();*/
+        mini.setOwnerId(player.getUUID());
+        mini.getUpgrades().setItem(0, new ItemStack(ModItems.upgrade(MiniUpgrade.SPEED)));
+        MiniMenu menu = new MiniMenu(0, player.getInventory(), mini);
+        int second = MiniEntity.EQUIPMENT_SLOTS.length + MiniEntity.INVENTORY_SIZE + 1;
+
+        check(helper, !menu.getSlot(second).mayPlace(new ItemStack(ModItems.upgrade(MiniUpgrade.SPEED))), "A second speed upgrade fit");
+        check(helper, menu.getSlot(second).mayPlace(new ItemStack(ModItems.upgrade(MiniUpgrade.MAGNET))), "A magnet upgrade didn't fit next to a speed upgrade");
+        check(helper, !menu.getSlot(second).mayPlace(new ItemStack(Items.DIAMOND)), "A diamond fit in an upgrade slot");
+        helper.succeed();
+    }
+
+    public static void combatUpgradeLetsAMiniFight(GameTestHelper helper) {
+        MiniEntity mini = helper.spawn(ModEntities.MINI_ENTITY.get(), SPAWN);
+        check(helper, !mini.canFight(), "A Mini without the combat upgrade can fight");
+
+        mini.getUpgrades().setItem(0, new ItemStack(ModItems.upgrade(MiniUpgrade.COMBAT)));
+        check(helper, mini.canFight(), "A Mini with the combat upgrade can't fight");
+
+        mini.setMode(MiniMode.SIT);
+        check(helper, !mini.canFight(), "A sitting Mini can fight");
         helper.succeed();
     }
 

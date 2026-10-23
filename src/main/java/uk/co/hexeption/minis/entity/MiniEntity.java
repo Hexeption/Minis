@@ -1,6 +1,9 @@
 package uk.co.hexeption.minis.entity;
 
 import java.util.UUID;
+import net.minecraft.resources.Identifier;
+//? if <1.21
+/*import java.nio.charset.StandardCharsets;*/
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.ContainerHelper;
@@ -17,6 +20,7 @@ import net.minecraft.world.food.FoodProperties;
 import net.minecraft.core.component.DataComponents;
 import uk.co.hexeption.minis.item.MiniItem;
 import uk.co.hexeption.minis.menu.MiniMenu;
+import uk.co.hexeption.minis.menu.MiniNameMenu;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -25,7 +29,16 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
+import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
+import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.phys.Vec3;
+import uk.co.hexeption.minis.Minis;
+import uk.co.hexeption.minis.entity.ai.MiniDefendOwnerGoal;
+import uk.co.hexeption.minis.item.UpgradeItem;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
@@ -60,9 +73,31 @@ public class MiniEntity extends PathfinderMob {
 	protected static final EntityDataAccessor<String> SKIN = SynchedEntityData.defineId(MiniEntity.class, EntityDataSerializers.STRING);
 
 	public static final int INVENTORY_SIZE = 9;
+	public static final int UPGRADE_SLOTS = 4;
+	private static final double MAGNET_RANGE = 6.0D;
+	//? if >=1.20.5 {
+	private static final AttributeModifier.Operation ADD = AttributeModifier.Operation.ADD_VALUE;
+	private static final AttributeModifier.Operation MULTIPLY = AttributeModifier.Operation.ADD_MULTIPLIED_BASE;
+	//?} else {
+	/*private static final AttributeModifier.Operation ADD = AttributeModifier.Operation.ADDITION;
+	private static final AttributeModifier.Operation MULTIPLY = AttributeModifier.Operation.MULTIPLY_BASE;
+	*///?}
 	public static final EquipmentSlot[] EQUIPMENT_SLOTS = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET, EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND};
 
 	private final SimpleContainer inventory = new SimpleContainer(INVENTORY_SIZE);
+	private final SimpleContainer upgrades = new SimpleContainer(UPGRADE_SLOTS) {
+		@Override
+		public void setChanged() {
+			super.setChanged();
+			if (!MiniEntity.this.loadingUpgrades) {
+				MiniEntity.this.applyUpgrades();
+			}
+		}
+	};
+	// How many players have one of the Mini's menus open. It stands still for them, so it can't walk out of reach
+	private int viewers;
+	// Loading puts the upgrades back one at a time, and applying them part way would cut the Mini's health
+	private boolean loadingUpgrades;
 
 	public double xCloakO;
 	public double yCloakO;
@@ -78,15 +113,27 @@ public class MiniEntity extends PathfinderMob {
 	public static AttributeSupplier.Builder setCustomAttributes() {
 		return MiniEntity.createMobAttributes()
 				.add(Attributes.MAX_HEALTH, 10.0D)
-				.add(Attributes.MOVEMENT_SPEED, 0.3D);
+				.add(Attributes.MOVEMENT_SPEED, 0.3D)
+				.add(Attributes.ATTACK_DAMAGE, 2.0D);
 	}
 
 	@Override
 	protected void registerGoals() {
 		this.goalSelector.addGoal(1, new FloatGoal(this));
 		this.goalSelector.addGoal(2, new MiniSitGoal(this));
-		this.goalSelector.addGoal(3, new MiniFollowOwnerGoal(this, 1.2D, 4.0D, 2.0D));
-		this.goalSelector.addGoal(4, new RandomStrollGoal(this, 1D) {
+		this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.2D, true) {
+			@Override
+			public boolean canUse() {
+				return canFight() && super.canUse();
+			}
+
+			@Override
+			public boolean canContinueToUse() {
+				return canFight() && super.canContinueToUse();
+			}
+		});
+		this.goalSelector.addGoal(4, new MiniFollowOwnerGoal(this, 1.2D, 4.0D, 2.0D));
+		this.goalSelector.addGoal(5, new RandomStrollGoal(this, 1D) {
 			@Override
 			public boolean canUse() {
 				return getMode() == MiniMode.WANDER && super.canUse();
@@ -97,8 +144,22 @@ public class MiniEntity extends PathfinderMob {
 				return getMode() == MiniMode.WANDER && super.canContinueToUse();
 			}
 		});
-		this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 6.0F));
-		this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
+		this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 6.0F));
+		this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
+
+		// Fights back, but never against its owner
+		this.targetSelector.addGoal(1, new HurtByTargetGoal(this) {
+			@Override
+			public boolean canUse() {
+				return canFight() && getLastHurtByMob() != getOwner() && super.canUse();
+			}
+		});
+		this.targetSelector.addGoal(2, new MiniDefendOwnerGoal(this, true));
+		this.targetSelector.addGoal(3, new MiniDefendOwnerGoal(this, false));
+	}
+
+	public boolean canFight() {
+		return this.hasUpgrade(MiniUpgrade.COMBAT) && !this.isSitting();
 	}
 
 	//? if >=1.20.5 {
@@ -135,7 +196,7 @@ public class MiniEntity extends PathfinderMob {
 		input.read("Owner", UUIDUtil.CODEC).ifPresent(this::setOwnerId);
 		this.setMode(MiniMode.byName(input.getStringOr("Mode", MiniMode.WANDER.name())));
 		this.setSkin(input.read("Skin", UUIDUtil.CODEC).orElse(null));
-		NonNullList<ItemStack> items = NonNullList.withSize(INVENTORY_SIZE, ItemStack.EMPTY);
+		NonNullList<ItemStack> items = NonNullList.withSize(INVENTORY_SIZE + UPGRADE_SLOTS, ItemStack.EMPTY);
 		ContainerHelper.loadAllItems(input, items);
 		this.setInventoryItems(items);
 	}
@@ -164,7 +225,7 @@ public class MiniEntity extends PathfinderMob {
 		}
 		this.setMode(MiniMode.byName(compound.getString("Mode")));
 		this.setSkin(compound.hasUUID("Skin") ? compound.getUUID("Skin") : null);
-		NonNullList<ItemStack> items = NonNullList.withSize(INVENTORY_SIZE, ItemStack.EMPTY);
+		NonNullList<ItemStack> items = NonNullList.withSize(INVENTORY_SIZE + UPGRADE_SLOTS, ItemStack.EMPTY);
 		//? if >=1.20.5 {
 		ContainerHelper.loadAllItems(compound, items, this.registryAccess());
 		//?} else
@@ -294,11 +355,83 @@ public class MiniEntity extends PathfinderMob {
 		return this.inventory;
 	}
 
-	// Saved with each item's slot, so nothing moves around when the world loads
+	public SimpleContainer getUpgrades() {
+		return this.upgrades;
+	}
+
+	public boolean hasUpgrade(MiniUpgrade upgrade) {
+		for (int i = 0; i < UPGRADE_SLOTS; i++) {
+			if (this.upgrades.getItem(i).getItem() instanceof UpgradeItem item && item.getUpgrade() == upgrade) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// Speed and health come from attribute modifiers, which are saved with the Mini so its health survives a reload
+	private void applyUpgrades() {
+		if (this.level().isClientSide()) {
+			return;
+		}
+
+		this.setModifier(this.getAttribute(Attributes.MOVEMENT_SPEED), MiniUpgrade.SPEED, 0.5D, MULTIPLY);
+		this.setModifier(this.getAttribute(Attributes.MAX_HEALTH), MiniUpgrade.HEALTH, 10.0D, ADD);
+		if (this.getHealth() > this.getMaxHealth()) {
+			this.setHealth(this.getMaxHealth());
+		}
+	}
+
+	private void setModifier(@Nullable AttributeInstance attribute, MiniUpgrade upgrade, double amount, AttributeModifier.Operation operation) {
+		if (attribute == null) {
+			return;
+		}
+
+		//? if >=1.21 {
+		Identifier id = Minis.id(upgrade.id());
+		attribute.removeModifier(id);
+		if (this.hasUpgrade(upgrade)) {
+			attribute.addPermanentModifier(new AttributeModifier(id, amount, operation));
+		}
+		//?} else {
+		/*UUID id = UUID.nameUUIDFromBytes(Minis.id(upgrade.id()).toString().getBytes(StandardCharsets.UTF_8));
+		attribute.removeModifier(id);
+		if (this.hasUpgrade(upgrade)) {
+			attribute.addPermanentModifier(new AttributeModifier(id, Minis.MODID + " " + upgrade.id(), amount, operation));
+		}
+		*///?}
+	}
+
+	// Pulls dropped items in, then picks them up once they're close enough
+	private void collectItems() {
+		for (ItemEntity item : this.level().getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate(MAGNET_RANGE), found -> found.isAlive() && !found.hasPickUpDelay())) {
+			if (this.distanceToSqr(item) > 1.0D) {
+				Vec3 pull = this.position().subtract(item.position()).normalize().scale(0.3D);
+				item.setDeltaMovement(pull);
+				continue;
+			}
+
+			ItemStack stack = item.getItem();
+			ItemStack left = this.inventory.addItem(stack.copy());
+			int taken = stack.getCount() - left.getCount();
+			if (taken > 0) {
+				this.take(item, taken);
+				if (left.isEmpty()) {
+					item.discard();
+				} else {
+					item.setItem(left);
+				}
+			}
+		}
+	}
+
+	// The inventory and the upgrades are saved as one list, each item with its slot, so nothing moves around when the world loads
 	private NonNullList<ItemStack> inventoryItems() {
-		NonNullList<ItemStack> items = NonNullList.withSize(INVENTORY_SIZE, ItemStack.EMPTY);
+		NonNullList<ItemStack> items = NonNullList.withSize(INVENTORY_SIZE + UPGRADE_SLOTS, ItemStack.EMPTY);
 		for (int i = 0; i < INVENTORY_SIZE; i++) {
 			items.set(i, this.inventory.getItem(i));
+		}
+		for (int i = 0; i < UPGRADE_SLOTS; i++) {
+			items.set(INVENTORY_SIZE + i, this.upgrades.getItem(i));
 		}
 		return items;
 	}
@@ -307,6 +440,12 @@ public class MiniEntity extends PathfinderMob {
 		for (int i = 0; i < INVENTORY_SIZE; i++) {
 			this.inventory.setItem(i, items.get(i));
 		}
+		this.loadingUpgrades = true;
+		for (int i = 0; i < UPGRADE_SLOTS; i++) {
+			this.upgrades.setItem(i, items.get(INVENTORY_SIZE + i));
+		}
+		this.loadingUpgrades = false;
+		this.applyUpgrades();
 	}
 
 	// Right click opens the Mini's screen for its owner, or feeds it when they're holding food. Sneaking picks it up.
@@ -336,9 +475,27 @@ public class MiniEntity extends PathfinderMob {
 				this.discard();
 				return InteractionResult.SUCCESS;
 			}
-			player.openMenu(new SimpleMenuProvider((containerId, playerInventory, opener) -> new MiniMenu(containerId, playerInventory, this), this.getDisplayName()));
+			this.openMenu(player);
 		}
 		return InteractionResult.SUCCESS;
+	}
+
+	public void startViewing() {
+		this.viewers++;
+		this.getNavigation().stop();
+	}
+
+	public void stopViewing() {
+		this.viewers = Math.max(0, this.viewers - 1);
+	}
+
+	public void openMenu(Player player) {
+		player.openMenu(new SimpleMenuProvider((containerId, playerInventory, opener) -> new MiniMenu(containerId, playerInventory, this), this.getDisplayName()));
+	}
+
+	// Asks a newly hatched Mini's owner what to call it, before showing the Mini's screen
+	public void openNameMenu(Player player) {
+		player.openMenu(new SimpleMenuProvider((containerId, playerInventory, opener) -> new MiniNameMenu(containerId, playerInventory, this), this.getDisplayName()));
 	}
 
 	// Everything given to a Mini drops, unlike a normal mob's gear
@@ -359,6 +516,7 @@ public class MiniEntity extends PathfinderMob {
 			}
 		}
 		Containers.dropContents(this.level(), this, this.inventory);
+		Containers.dropContents(this.level(), this, this.upgrades);
 	}
 
 	@Override
@@ -370,6 +528,12 @@ public class MiniEntity extends PathfinderMob {
 	public void tick() {
 		super.tick();
 		this.moveCloak();
+		if (!this.level().isClientSide() && this.hasUpgrade(MiniUpgrade.MAGNET)) {
+			this.collectItems();
+		}
+		if (this.viewers > 0) {
+			this.getNavigation().stop();
+		}
 	}
 
 	private void moveCloak() {

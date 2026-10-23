@@ -59,15 +59,15 @@ public class MiniScreen extends AbstractContainerScreen<MiniMenu> {
 
 	public MiniScreen(MiniMenu menu, Inventory playerInventory, Component title) {
 		//? if >=26.1 {
-		super(menu, playerInventory, title, 176, 216);
+		super(menu, playerInventory, title, 176, 240);
 		//?} else {
 		/*super(menu, playerInventory, title);
 		this.imageWidth = 176;
-		this.imageHeight = 216;
+		this.imageHeight = 240;
 		*///?}
 		// The name row draws the title itself
 		this.titleLabelY = -1000;
-		this.inventoryLabelY = 123;
+		this.inventoryLabelY = 147;
 		this.name = title.getString();
 	}
 
@@ -180,7 +180,7 @@ public class MiniScreen extends AbstractContainerScreen<MiniMenu> {
 		float health = mini.getHealth();
 		for (int i = 0; i < hearts; i++) {
 			int x = 98 + (i % 8) * 9;
-			int y = 86 + (i / 8) * 9;
+			int y = 104 + (i / 8) * 9;
 			drawer.draw(Heart.CONTAINER, x, y);
 			float left = health - i * 2;
 			if (left >= 2) {

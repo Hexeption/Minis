@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "minis:combat_upgrade_lets_a_mini_fight",
+  "max_ticks": 20,
+  "required": true,
+  "setup_ticks": 1,
+  "structure": "minis:minigametests.empty"
+}

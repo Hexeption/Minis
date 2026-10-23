@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import uk.co.hexeption.minis.entity.MiniEntity;
 import uk.co.hexeption.minis.entity.MiniMode;
 import uk.co.hexeption.minis.init.ModMenus;
+import uk.co.hexeption.minis.item.UpgradeItem;
 
 //? if <1.21
 /*import net.minecraft.world.entity.LivingEntity;*/
@@ -30,7 +31,7 @@ import uk.co.hexeption.minis.init.ModMenus;
  * @author Hexeption admin@hexeption.co.uk
  * @since 23/10/2026
  */
-public class MiniMenu extends AbstractContainerMenu {
+public class MiniMenu extends AbstractContainerMenu implements MiniHolder {
 
 	//? if >=1.21.2 {
 	private static final Identifier SWORD_ICON = Identifier.withDefaultNamespace("container/slot/sword");
@@ -41,7 +42,8 @@ public class MiniMenu extends AbstractContainerMenu {
 
 	private static final int EQUIPMENT_END = MiniEntity.EQUIPMENT_SLOTS.length;
 	private static final int INVENTORY_END = EQUIPMENT_END + MiniEntity.INVENTORY_SIZE;
-	private static final int PLAYER_END = INVENTORY_END + 36;
+	private static final int UPGRADES_END = INVENTORY_END + MiniEntity.UPGRADE_SLOTS;
+	private static final int PLAYER_END = UPGRADES_END + 36;
 
 	@Nullable
 	private final MiniEntity mini;
@@ -51,16 +53,19 @@ public class MiniMenu extends AbstractContainerMenu {
 	private final DataSlot mode = DataSlot.standalone();
 
 	public MiniMenu(int containerId, Inventory playerInventory) {
-		this(containerId, playerInventory, null, new SimpleContainer(MiniEntity.EQUIPMENT_SLOTS.length), new SimpleContainer(MiniEntity.INVENTORY_SIZE));
+		this(containerId, playerInventory, null, new SimpleContainer(MiniEntity.EQUIPMENT_SLOTS.length), new SimpleContainer(MiniEntity.INVENTORY_SIZE), new SimpleContainer(MiniEntity.UPGRADE_SLOTS));
 	}
 
 	public MiniMenu(int containerId, Inventory playerInventory, MiniEntity mini) {
-		this(containerId, playerInventory, mini, new EquipmentContainer(mini), mini.getInventory());
+		this(containerId, playerInventory, mini, new EquipmentContainer(mini), mini.getInventory(), mini.getUpgrades());
 	}
 
-	private MiniMenu(int containerId, Inventory playerInventory, @Nullable MiniEntity mini, Container equipment, Container inventory) {
+	private MiniMenu(int containerId, Inventory playerInventory, @Nullable MiniEntity mini, Container equipment, Container inventory, Container upgrades) {
 		super(ModMenus.MINI.get(), containerId);
 		this.mini = mini;
+		if (mini != null) {
+			mini.startViewing();
+		}
 
 		Identifier[] armorIcons = {InventoryMenu.EMPTY_ARMOR_SLOT_HELMET, InventoryMenu.EMPTY_ARMOR_SLOT_CHESTPLATE, InventoryMenu.EMPTY_ARMOR_SLOT_LEGGINGS, InventoryMenu.EMPTY_ARMOR_SLOT_BOOTS};
 		for (int i = 0; i < 4; i++) {
@@ -70,16 +75,19 @@ public class MiniMenu extends AbstractContainerMenu {
 		this.addSlot(new IconSlot(equipment, 5, 80, 78, InventoryMenu.EMPTY_ARMOR_SLOT_SHIELD));
 
 		for (int i = 0; i < MiniEntity.INVENTORY_SIZE; i++) {
-			this.addSlot(new Slot(inventory, i, 8 + i * 18, 102));
+			this.addSlot(new Slot(inventory, i, 8 + i * 18, 126));
+		}
+		for (int i = 0; i < MiniEntity.UPGRADE_SLOTS; i++) {
+			this.addSlot(new UpgradeSlot(upgrades, i, 98 + i * 18, 84));
 		}
 
 		for (int row = 0; row < 3; row++) {
 			for (int column = 0; column < 9; column++) {
-				this.addSlot(new Slot(playerInventory, column + row * 9 + 9, 8 + column * 18, 134 + row * 18));
+				this.addSlot(new Slot(playerInventory, column + row * 9 + 9, 8 + column * 18, 158 + row * 18));
 			}
 		}
 		for (int column = 0; column < 9; column++) {
-			this.addSlot(new Slot(playerInventory, column, 8 + column * 18, 192));
+			this.addSlot(new Slot(playerInventory, column, 8 + column * 18, 216));
 		}
 
 		if (mini != null) {
@@ -92,7 +100,7 @@ public class MiniMenu extends AbstractContainerMenu {
 		this.addDataSlot(this.mode);
 	}
 
-	// Only set on the server
+	@Override
 	@Nullable
 	public MiniEntity getMini() {
 		return this.mini;
@@ -119,6 +127,14 @@ public class MiniMenu extends AbstractContainerMenu {
 	}
 
 	@Override
+	public void removed(Player player) {
+		super.removed(player);
+		if (this.mini != null) {
+			this.mini.stopViewing();
+		}
+	}
+
+	@Override
 	public boolean stillValid(Player player) {
 		return this.mini == null || (this.mini.isAlive() && this.mini.isOwnedBy(player) && this.mini.distanceToSqr(player) < 64.0D);
 	}
@@ -132,11 +148,13 @@ public class MiniMenu extends AbstractContainerMenu {
 
 		ItemStack stack = slot.getItem();
 		ItemStack original = stack.copy();
-		if (index < INVENTORY_END) {
-			if (!this.moveItemStackTo(stack, INVENTORY_END, PLAYER_END, true)) {
+		if (index < UPGRADES_END) {
+			if (!this.moveItemStackTo(stack, UPGRADES_END, PLAYER_END, true)) {
 				return ItemStack.EMPTY;
 			}
-		} else if (!this.moveItemStackTo(stack, 0, 4, false) && !this.moveItemStackTo(stack, EQUIPMENT_END, INVENTORY_END, false)) {
+		} else if (!this.moveItemStackTo(stack, INVENTORY_END, UPGRADES_END, false)
+				&& !this.moveItemStackTo(stack, 0, 4, false)
+				&& !this.moveItemStackTo(stack, EQUIPMENT_END, INVENTORY_END, false)) {
 			return ItemStack.EMPTY;
 		}
 
@@ -187,6 +205,31 @@ public class MiniMenu extends AbstractContainerMenu {
 		@Override
 		public boolean mayPlace(ItemStack stack) {
 			return MiniMenu.this.mini == null || equipmentSlotFor(MiniMenu.this.mini, stack) == this.equipmentSlot;
+		}
+
+		@Override
+		public int getMaxStackSize() {
+			return 1;
+		}
+	}
+
+	// Takes one of each kind of upgrade
+	private static class UpgradeSlot extends Slot {
+		UpgradeSlot(Container container, int index, int x, int y) {
+			super(container, index, x, y);
+		}
+
+		@Override
+		public boolean mayPlace(ItemStack stack) {
+			if (!(stack.getItem() instanceof UpgradeItem upgrade)) {
+				return false;
+			}
+			for (int i = 0; i < this.container.getContainerSize(); i++) {
+				if (i != this.getContainerSlot() && this.container.getItem(i).getItem() instanceof UpgradeItem other && other.getUpgrade() == upgrade.getUpgrade()) {
+					return false;
+				}
+			}
+			return true;
 		}
 
 		@Override

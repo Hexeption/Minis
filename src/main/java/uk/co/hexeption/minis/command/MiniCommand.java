@@ -12,7 +12,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 import uk.co.hexeption.minis.entity.MiniEntity;
 import uk.co.hexeption.minis.init.ModEntities;
-import uk.co.hexeption.minis.menu.MiniMenu;
+import uk.co.hexeption.minis.menu.MiniHolder;
+import uk.co.hexeption.minis.menu.MiniNameMenu;
 
 //? if >=1.21.2
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -21,7 +22,8 @@ import net.minecraft.world.entity.EntitySpawnReason;
  * MiniCommand
  *
  * /minis spawn [owner] spawns a Mini of the owner (you by default) where you're standing.
- * /minis name [name] renames the Mini whose screen you have open, and it takes that player's skin.
+ * /minis name [name] renames the Mini whose screen you have open, and it takes that player's skin. Naming a newly
+ * hatched Mini then opens its main screen.
  *
  * @author Hexeption admin@hexeption.co.uk
  * @since 23/10/2026
@@ -52,7 +54,7 @@ public final class MiniCommand {
 
     private static int rename(CommandSourceStack source, String name) throws CommandSyntaxException {
         ServerPlayer player = source.getPlayerOrException();
-        if (!(player.containerMenu instanceof MiniMenu menu) || menu.getMini() == null || !menu.getMini().isOwnedBy(player)) {
+        if (!(player.containerMenu instanceof MiniHolder menu) || menu.getMini() == null || !menu.getMini().isOwnedBy(player)) {
             return 0;
         }
 
@@ -66,6 +68,9 @@ public final class MiniCommand {
             String newName = trimmed.length() > MAX_NAME_LENGTH ? trimmed.substring(0, MAX_NAME_LENGTH) : trimmed;
             mini.setCustomName(Component.literal(newName));
             mini.useSkinOf(newName);
+        }
+        if (menu instanceof MiniNameMenu) {
+            mini.openMenu(player);
         }
         return 1;
     }
