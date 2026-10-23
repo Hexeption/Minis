@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "pattern": [
+    "R R",
+    "I I",
+    "III"
+  ],
+  "result": {
+    "item": "minis:magnet_upgrade"
+  },
+  "show_notification": true
+}

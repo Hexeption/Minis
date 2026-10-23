@@ -55,14 +55,29 @@ if (mod.isNeoforge && stonecutter.eval(minecraft, ">=1.21.5 <1.21.9")) {
 
 // DevAuth supplies the account name
 
-// Forge 1.21.11 can't start a dev server under Architectury Loom
-if (mod.isForge && minecraft == "1.21.11") {
+// Forge 1.21.11 can't start a dev server under Architectury Loom, and Forge 1.20.6's dev game test server never loads
+// its server config, which any living entity reads as soon as it moves
+if (mod.isForge && (minecraft == "1.21.11" || minecraft == "1.20.6")) {
     tasks.matching { it.name == "runGameTestServer" }.configureEach { enabled = false }
 }
 afterEvaluate {
     loom.runs.named("client") {
         programArguments.set(programArguments.get().filterNot { it.startsWith("--username") })
     }
+}
+
+// Datagen only runs on Fabric, once per Minecraft version. Its output is plain vanilla data, so Forge and NeoForge
+// read the Fabric build's folder instead of generating their own.
+if (!mod.isFabric) {
+    sourceSets.main {
+        java.exclude("**/datagen/**")
+    }
+    tasks.processResources {
+        from(rootProject.layout.projectDirectory.dir("versions/$minecraft-fabric/src/main/generated"))
+    }
+}
+tasks.processResources {
+    exclude(".cache/**")
 }
 
 stonecutter {

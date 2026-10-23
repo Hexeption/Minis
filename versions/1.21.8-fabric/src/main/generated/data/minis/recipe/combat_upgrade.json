@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "D": "minecraft:diamond",
+    "I": "minecraft:iron_ingot",
+    "S": "minecraft:iron_sword"
+  },
+  "pattern": [
+    " S ",
+    "IDI",
+    " I "
+  ],
+  "result": {
+    "count": 1,
+    "id": "minis:combat_upgrade"
+  }
+}

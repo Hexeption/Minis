@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "key": {
+    "F": "minecraft:feather",
+    "G": "minecraft:gold_ingot",
+    "S": "minecraft:sugar"
+  },
+  "pattern": [
+    "SFS",
+    "FGF",
+    "SFS"
+  ],
+  "result": {
+    "id": "minis:speed_upgrade"
+  }
+}

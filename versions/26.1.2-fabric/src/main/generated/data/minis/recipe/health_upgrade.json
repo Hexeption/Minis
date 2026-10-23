@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "minecraft:apple",
+    "M": "minecraft:glistering_melon_slice",
+    "N": "minecraft:gold_nugget"
+  },
+  "pattern": [
+    "NMN",
+    "MAM",
+    "NMN"
+  ],
+  "result": {
+    "id": "minis:health_upgrade"
+  }
+}

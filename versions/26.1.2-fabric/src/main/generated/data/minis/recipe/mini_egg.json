@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "E": "minecraft:egg",
+    "N": "minecraft:gold_nugget"
+  },
+  "pattern": [
+    "NNN",
+    "NEN",
+    "NNN"
+  ],
+  "result": {
+    "id": "minis:mini_egg"
+  }
+}

@@ -14,7 +14,8 @@
   "entrypoints": {
     "main": ["${group}.Minis"],
     "client": ["${group}.client.MinisClient"],
-    "fabric-gametest": ["${group}.gametest.MiniGameTests"]
+    "fabric-gametest": ["${group}.gametest.MiniGameTests"],
+    "fabric-datagen": ["${group}.datagen.MinisDataGenerator"]
   },
   "mixins": [${fabricMixins}],
   "depends": {

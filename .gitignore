@@ -118,3 +118,6 @@ run/
 !gradle-wrapper.jar
 
 runs/
+
+# Datagen's own bookkeeping
+**/src/main/generated/.cache/
