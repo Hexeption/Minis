@@ -1,6 +1,8 @@
 package uk.co.hexeption.minis.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
@@ -10,6 +12,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 import uk.co.hexeption.minis.entity.MiniEntity;
 import uk.co.hexeption.minis.init.ModEntities;
+import uk.co.hexeption.minis.menu.MiniMenu;
 
 //? if >=1.21.2
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -18,25 +21,50 @@ import net.minecraft.world.entity.EntitySpawnReason;
  * MiniCommand
  *
  * /minis spawn [owner] spawns a Mini of the owner (you by default) where you're standing.
+ * /minis name [name] renames the Mini whose screen you have open.
  *
  * @author Hexeption admin@hexeption.co.uk
  * @since 23/10/2026
  */
 public final class MiniCommand {
 
+    public static final int MAX_NAME_LENGTH = 32;
+
     private MiniCommand() {
     }
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("minis")
-                //? if >=1.21.11 {
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
-                //?} else
-                /*.requires(source -> source.hasPermission(2))*/
                 .then(Commands.literal("spawn")
+                        //? if >=1.21.11 {
+                        .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        //?} else
+                        /*.requires(source -> source.hasPermission(2))*/
                         .executes(context -> spawn(context.getSource(), context.getSource().getPlayerOrException()))
                         .then(Commands.argument("owner", EntityArgument.player())
-                                .executes(context -> spawn(context.getSource(), EntityArgument.getPlayer(context, "owner"))))));
+                                .executes(context -> spawn(context.getSource(), EntityArgument.getPlayer(context, "owner")))))
+                // Used by the Mini's screen, so it only works on a Mini you own and have open
+                .then(Commands.literal("name")
+                        .executes(context -> rename(context.getSource(), ""))
+                        .then(Commands.argument("name", StringArgumentType.greedyString())
+                                .executes(context -> rename(context.getSource(), StringArgumentType.getString(context, "name"))))));
+    }
+
+    private static int rename(CommandSourceStack source, String name) throws CommandSyntaxException {
+        ServerPlayer player = source.getPlayerOrException();
+        if (!(player.containerMenu instanceof MiniMenu menu) || menu.getMini() == null || !menu.getMini().isOwnedBy(player)) {
+            return 0;
+        }
+
+        MiniEntity mini = menu.getMini();
+        String trimmed = name.trim();
+        if (trimmed.isEmpty()) {
+            mini.setCustomName(null);
+            mini.nameAfterOwner();
+        } else {
+            mini.setCustomName(Component.literal(trimmed.length() > MAX_NAME_LENGTH ? trimmed.substring(0, MAX_NAME_LENGTH) : trimmed));
+        }
+        return 1;
     }
 
     private static int spawn(CommandSourceStack source, ServerPlayer owner) {

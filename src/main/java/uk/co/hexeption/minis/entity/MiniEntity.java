@@ -2,6 +2,16 @@ package uk.co.hexeption.minis.entity;
 
 import java.util.UUID;
 import net.minecraft.network.chat.Component;
+import net.minecraft.core.NonNullList;
+import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.Containers;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
+import uk.co.hexeption.minis.menu.MiniMenu;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -40,6 +50,11 @@ public class MiniEntity extends PathfinderMob {
 	// The owner's UUID as a string, "" when it has none
 	protected static final EntityDataAccessor<String> OWNER = SynchedEntityData.defineId(MiniEntity.class, EntityDataSerializers.STRING);
 	protected static final EntityDataAccessor<Integer> MODE = SynchedEntityData.defineId(MiniEntity.class, EntityDataSerializers.INT);
+
+	public static final int INVENTORY_SIZE = 9;
+	public static final EquipmentSlot[] EQUIPMENT_SLOTS = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET, EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND};
+
+	private final SimpleContainer inventory = new SimpleContainer(INVENTORY_SIZE);
 
 	public double xCloakO;
 	public double yCloakO;
@@ -100,6 +115,7 @@ public class MiniEntity extends PathfinderMob {
 		super.addAdditionalSaveData(output);
 		output.storeNullable("Owner", UUIDUtil.CODEC, this.getOwnerId());
 		output.putString("Mode", this.getMode().name());
+		ContainerHelper.saveAllItems(output, this.inventoryItems());
 	}
 
 	@Override
@@ -107,6 +123,9 @@ public class MiniEntity extends PathfinderMob {
 		super.readAdditionalSaveData(input);
 		input.read("Owner", UUIDUtil.CODEC).ifPresent(this::setOwnerId);
 		this.setMode(MiniMode.byName(input.getStringOr("Mode", MiniMode.WANDER.name())));
+		NonNullList<ItemStack> items = NonNullList.withSize(INVENTORY_SIZE, ItemStack.EMPTY);
+		ContainerHelper.loadAllItems(input, items);
+		this.setInventoryItems(items);
 	}
 	//?} else {
 	/*@Override
@@ -116,6 +135,10 @@ public class MiniEntity extends PathfinderMob {
 			compound.putUUID("Owner", this.getOwnerId());
 		}
 		compound.putString("Mode", this.getMode().name());
+		//? if >=1.20.5 {
+		ContainerHelper.saveAllItems(compound, this.inventoryItems(), this.registryAccess());
+		//?} else
+		/^ContainerHelper.saveAllItems(compound, this.inventoryItems());^/
 	}
 
 	@Override
@@ -125,6 +148,12 @@ public class MiniEntity extends PathfinderMob {
 			this.setOwnerId(compound.getUUID("Owner"));
 		}
 		this.setMode(MiniMode.byName(compound.getString("Mode")));
+		NonNullList<ItemStack> items = NonNullList.withSize(INVENTORY_SIZE, ItemStack.EMPTY);
+		//? if >=1.20.5 {
+		ContainerHelper.loadAllItems(compound, items, this.registryAccess());
+		//?} else
+		/^ContainerHelper.loadAllItems(compound, items);^/
+		this.setInventoryItems(items);
 	}
 	*///?}
 
@@ -137,10 +166,20 @@ public class MiniEntity extends PathfinderMob {
 	public void setOwnerId(@Nullable UUID uuid) {
 		this.entityData.set(OWNER, uuid == null ? "" : uuid.toString());
 
-		// Name the Mini after its owner once the lookup comes back
-		if (uuid != null && this.level() instanceof ServerLevel serverLevel) {
-			MiniProfiles.get(uuid).thenAccept(profile -> profile.ifPresent(found ->
-					serverLevel.getServer().execute(() -> this.setCustomName(Component.literal(found.name())))));
+		if (!this.hasCustomName()) {
+			this.nameAfterOwner();
+		}
+	}
+
+	// Names the Mini after its owner once the lookup comes back, unless it's been given a name since
+	public void nameAfterOwner() {
+		UUID owner = this.getOwnerId();
+		if (owner != null && this.level() instanceof ServerLevel serverLevel) {
+			MiniProfiles.get(owner).thenAccept(profile -> profile.ifPresent(found -> serverLevel.getServer().execute(() -> {
+				if (!this.hasCustomName()) {
+					this.setCustomName(Component.literal(found.name()));
+				}
+			})));
 		}
 	}
 
@@ -167,6 +206,61 @@ public class MiniEntity extends PathfinderMob {
 
 	public boolean isSitting() {
 		return this.getMode() == MiniMode.SIT;
+	}
+
+	public SimpleContainer getInventory() {
+		return this.inventory;
+	}
+
+	// Saved with each item's slot, so nothing moves around when the world loads
+	private NonNullList<ItemStack> inventoryItems() {
+		NonNullList<ItemStack> items = NonNullList.withSize(INVENTORY_SIZE, ItemStack.EMPTY);
+		for (int i = 0; i < INVENTORY_SIZE; i++) {
+			items.set(i, this.inventory.getItem(i));
+		}
+		return items;
+	}
+
+	private void setInventoryItems(NonNullList<ItemStack> items) {
+		for (int i = 0; i < INVENTORY_SIZE; i++) {
+			this.inventory.setItem(i, items.get(i));
+		}
+	}
+
+	// Right click opens the Mini's screen for its owner. A Mini without an owner belongs to whoever clicks it first
+	@Override
+	protected InteractionResult mobInteract(Player player, InteractionHand hand) {
+		if (this.getOwnerId() != null && !this.isOwnedBy(player)) {
+			return InteractionResult.PASS;
+		}
+
+		if (!this.level().isClientSide()) {
+			if (this.getOwnerId() == null) {
+				this.setOwnerId(player.getUUID());
+			}
+			player.openMenu(new SimpleMenuProvider((containerId, playerInventory, opener) -> new MiniMenu(containerId, playerInventory, this), this.getDisplayName()));
+		}
+		return InteractionResult.SUCCESS;
+	}
+
+	// Everything given to a Mini drops, unlike a normal mob's gear
+	//? if >=1.21.2 {
+	@Override
+	protected void dropEquipment(ServerLevel level) {
+		super.dropEquipment(level);
+	//?} else {
+	/*@Override
+	protected void dropEquipment() {
+		super.dropEquipment();
+	*///?}
+		for (EquipmentSlot slot : EQUIPMENT_SLOTS) {
+			ItemStack stack = this.getItemBySlot(slot);
+			if (!stack.isEmpty()) {
+				Containers.dropItemStack(this.level(), this.getX(), this.getY(), this.getZ(), stack);
+				this.setItemSlot(slot, ItemStack.EMPTY);
+			}
+		}
+		Containers.dropContents(this.level(), this, this.inventory);
 	}
 
 	@Override

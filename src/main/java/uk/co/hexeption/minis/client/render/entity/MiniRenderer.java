@@ -1,7 +1,9 @@
 package uk.co.hexeption.minis.client.render.entity;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelLayers;
+import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.resources.Identifier;
@@ -40,10 +42,15 @@ public class MiniRenderer extends HumanoidMobRenderer<MiniEntity, AvatarRenderSt
     // How far a sitting Mini drops so it sits on the ground instead of on thin air, in blocks
     private static final float SITTING_DROP = 0.3125F;
 
+    // Set while the Mini's screen draws it, so it shows full size and without a name tag
+    public static boolean renderingInGui;
+
     public MiniRenderer(EntityRendererProvider.Context context) {
         //? if >=1.21.2 {
         super(context, new PlayerModel(context.bakeLayer(ModelLayers.PLAYER_SLIM), true), 0.25f);
         this.addLayer(new CapeLayer(this, context.getModelSet(), context.getEquipmentAssets()));
+        //? if <1.21.9
+        /*this.addLayer(new HumanoidArmorLayer<>(this, new HumanoidModel<>(context.bakeLayer(ModelLayers.PLAYER_SLIM_INNER_ARMOR)), new HumanoidModel<>(context.bakeLayer(ModelLayers.PLAYER_SLIM_OUTER_ARMOR)), context.getEquipmentRenderer()));*/
         //?} else {
         /*super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER_SLIM), true) {
             @Override
@@ -53,6 +60,7 @@ public class MiniRenderer extends HumanoidMobRenderer<MiniEntity, AvatarRenderSt
             }
         }, 0.25f);
         this.addLayer(new CustomCapeLayer(this));
+        this.addLayer(new HumanoidArmorLayer<>(this, new HumanoidModel<>(context.bakeLayer(ModelLayers.PLAYER_SLIM_INNER_ARMOR)), new HumanoidModel<>(context.bakeLayer(ModelLayers.PLAYER_SLIM_OUTER_ARMOR)), context.getModelManager()));
         *///?}
     }
 
@@ -75,7 +83,11 @@ public class MiniRenderer extends HumanoidMobRenderer<MiniEntity, AvatarRenderSt
     public void extractRenderState(MiniEntity mini, PlayerRenderState state, float partialTick) {
     *///?}
         super.extractRenderState(mini, state, partialTick);
-        state.scale *= 0.5f;
+        if (renderingInGui) {
+            state.nameTag = null;
+        } else {
+            state.scale *= 0.5f;
+        }
         state.isPassenger = mini.isSitting();
         //? if >=1.21.9 {
         if (mini.isSitting()) {
@@ -123,10 +135,17 @@ public class MiniRenderer extends HumanoidMobRenderer<MiniEntity, AvatarRenderSt
     //?} else {
     /*@Override
     protected void scale(MiniEntity mini, PoseStack poseStack, float partialTick) {
-        poseStack.scale(0.5f, 0.5f, 0.5f);
+        if (!renderingInGui) {
+            poseStack.scale(0.5f, 0.5f, 0.5f);
+        }
         if (mini.isSitting()) {
             poseStack.translate(0.0F, SITTING_DROP * 2.0F, 0.0F);
         }
+    }
+
+    @Override
+    protected boolean shouldShowName(MiniEntity mini) {
+        return !renderingInGui && super.shouldShowName(mini);
     }
 
     @Override
