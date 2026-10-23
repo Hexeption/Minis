@@ -45,13 +45,29 @@ jobs:
           done
           exit $failed
 
-  build:
+  # Every folder in versions/ is one Minecraft version and loader, and gets its own build and publish job
+  versions:
     runs-on: ubuntu-latest
-    # A game test that never finishes keeps the server running, so don't let one eat hours of runner time
-    timeout-minutes: 90
+    outputs:
+      list: ${{ steps.list.outputs.list }}
     steps:
       - uses: actions/checkout@v7
-      # 1.20.1 needs 17, 1.20.5 to 1.21.1 need 21, and 26.x needs 25
+      - id: list
+        run: echo "list=$(ls versions | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: versions
+    name: build (${{ matrix.version }})
+    runs-on: ubuntu-latest
+    # A game test that never finishes keeps the server running, so don't let one eat hours of runner time
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ${{ fromJson(needs.versions.outputs.list) }}
+    steps:
+      - uses: actions/checkout@v7
+      # 1.20.1 to 1.20.4 build with 17, 1.20.5 to 1.21.11 need 21, and 26.x needs 25
       - name: Setup JDKs
         uses: actions/setup-java@v6
         with:
@@ -64,19 +80,26 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
-      - name: Build all versions
-        run: ./gradlew build
-      - name: Run game tests on all versions
-        run: ./gradlew chiseledGameTest
+      # Configure on demand keeps Loom from setting up every other version in this job too
+      - name: Build
+        run: ./gradlew --configure-on-demand ":${{ matrix.version }}:build"
+      # Skipped on Forge 1.21.11, which can't start a dev server
+      - name: Run game tests
+        run: ./gradlew --configure-on-demand ":${{ matrix.version }}:runGameTestServer"
       - uses: actions/upload-artifact@v7
         with:
-          name: Builds
-          path: versions/*/build/libs/*.jar
+          name: ${{ matrix.version }}
+          path: versions/${{ matrix.version }}/build/libs/*.jar
 
   publish:
-    needs: build
+    needs: [versions, build]
+    name: publish (${{ matrix.version }})
     if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.publish)
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ${{ fromJson(needs.versions.outputs.list) }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -102,12 +125,13 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
       # A v1.2.3 tag publishes as version 1.2.3; a manual run uses mod.version from gradle.properties
-      - name: Publish all versions
+      - name: Publish
         run: |
+          task=":${{ matrix.version }}:publishMods"
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            ./gradlew publishMods "-Pmod.version=${GITHUB_REF_NAME#v}"
+            ./gradlew --configure-on-demand "$task" "-Pmod.version=${GITHUB_REF_NAME#v}"
           else
-            ./gradlew publishMods
+            ./gradlew --configure-on-demand "$task"
           fi
         env:
           DO_PUBLISH: "true"
