@@ -5,6 +5,17 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+//? if >=1.21.5 {
+import java.util.function.Consumer;
+import net.minecraft.world.item.component.TooltipDisplay;
+//?} else
+/*import java.util.List;*/
+//? if <1.20.5
+/*import net.minecraft.world.level.Level;*/
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import uk.co.hexeption.minis.entity.MiniEntity;
 import uk.co.hexeption.minis.init.ModEntities;
@@ -25,6 +36,23 @@ public class MiniEggItem extends Item {
 	public MiniEggItem(Properties properties) {
 		super(properties);
 	}
+
+	//? if >=1.21.5 {
+	@Override
+	public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
+		tooltip.accept(Component.translatable(this.getDescriptionId() + ".desc").withStyle(ChatFormatting.GRAY));
+	}
+	//?} else if >=1.20.5 {
+	/*@Override
+	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+		tooltip.add(Component.translatable(this.getDescriptionId() + ".desc").withStyle(ChatFormatting.GRAY));
+	}
+	*///?} else {
+	/*@Override
+	public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
+		tooltip.add(Component.translatable(this.getDescriptionId() + ".desc").withStyle(ChatFormatting.GRAY));
+	}
+	*///?}
 
 	@Override
 	public InteractionResult useOn(UseOnContext context) {
