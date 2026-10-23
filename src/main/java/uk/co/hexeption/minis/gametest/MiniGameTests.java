@@ -323,11 +323,11 @@ public class MiniGameTests {
 
     public static void magnetCollectsNearbyItems(GameTestHelper helper) {
         floor(helper);
-        MiniEntity mini = helper.spawn(ModEntities.MINI_ENTITY.get(), SPAWN);
+        // Opposite corners of the 3x3 test area, so the item has to be pulled in but never leaves the test's space
+        MiniEntity mini = helper.spawn(ModEntities.MINI_ENTITY.get(), new BlockPos(0, 1, 0));
         mini.setMode(MiniMode.SIT);
         mini.getUpgrades().setItem(0, new ItemStack(ModItems.upgrade(MiniUpgrade.MAGNET)));
-        // Two blocks away, so it has to be pulled in, and still inside the test's walls
-        BlockPos drop = helper.absolutePos(new BlockPos(1, 1, 3));
+        BlockPos drop = helper.absolutePos(new BlockPos(2, 1, 2));
         ItemEntity item = new ItemEntity(helper.getLevel(), drop.getX() + 0.5D, drop.getY(), drop.getZ() + 0.5D, new ItemStack(Items.DIAMOND, 2));
         item.setNoPickUpDelay();
         helper.getLevel().addFreshEntity(item);
